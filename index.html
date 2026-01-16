@@ -3,29 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Venus AI 3.5</title>
+    <title>Venus AI 3.5 | Pro Kernel</title>
     
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script type="importmap">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { background: #000; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass { background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); }
+        .active-tab { background: #6366f1; box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
+        .sidebar-item { border-left: 2px solid transparent; transition: 0.3s; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.03); border-color: rgba(99, 102, 241, 0.3); }
+        .cyber-card { border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(145deg, rgba(20,20,20,0.4), rgba(5,5,5,0.4)); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+    </style>
+<script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.368.0",
-    "@tanstack/react-query": "https://esm.sh/@tanstack/react-query@5.28.4",
-    "sonner": "https://esm.sh/sonner@1.4.41",
-    "@google/genai": "https://esm.sh/@google/genai@1.37.0",
-    "pixi.js": "https://esm.sh/pixi.js@8.15.0",
-    "tldraw": "https://esm.sh/tldraw@4.2.3",
-    "comlink": "https://esm.sh/comlink@4.4.2",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
     "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "pixi.js": "https://esm.sh/pixi.js@^8.15.0",
+    "sonner": "https://esm.sh/sonner@^2.0.7",
     "node-vibrant": "https://esm.sh/node-vibrant@^4.0.3",
-    "@uppy/core": "https://esm.sh/@uppy/core@^5.2.0",
+    "tldraw": "https://esm.sh/tldraw@^4.2.3",
     "perfect-freehand": "https://esm.sh/perfect-freehand@^1.2.2",
+    "@uppy/core": "https://esm.sh/@uppy/core@^5.2.0",
     "@uppy/react": "https://esm.sh/@uppy/react@^5.1.1",
     "@uppy/image-editor": "https://esm.sh/@uppy/image-editor@^4.1.0",
     "@uppy/compressor": "https://esm.sh/@uppy/compressor@^3.1.0",
@@ -35,23 +46,215 @@
     "vite": "https://esm.sh/vite@^7.3.1",
     "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0",
     "canvaskit-wasm": "https://esm.sh/canvaskit-wasm@^0.40.0",
+    "comlink": "https://esm.sh/comlink@^4.4.2",
     "pica": "https://esm.sh/pica@^9.0.1",
     "yjs": "https://esm.sh/yjs@^13.6.29",
-    "jszip": "https://esm.sh/jszip@^3.10.1",
     "y-webrtc": "https://esm.sh/y-webrtc@^10.3.0",
+    "jszip": "https://esm.sh/jszip@^3.10.1",
     "peerjs": "https://esm.sh/peerjs@^1.5.5"
   }
 }
 </script>
 </head>
-<body class="bg-black text-white">
+<body>
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        import React from 'react';
-        import ReactDOM from 'react-dom/client';
-        // IMPORTANTE: Mudamos para .js para evitar o erro de MIME type do Google
-        import App from './App.js'; 
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- COMPONENTES AUXILIARES ---
+        const Badge = ({ children, color="indigo" }) => (
+            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-${color}-500/20 text-${color}-400 border border-${color}-500/30`}>
+                {children}
+            </span>
+        );
+
+        // --- MÓDULO: CINEMA LAB ---
+        const CinemaLab = () => (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="grid grid-cols-12 gap-6">
+                    <div className="col-span-8 space-y-4">
+                        <div className="aspect-video cyber-card flex items-center justify-center relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                            <span className="text-[10px] font-mono tracking-[0.5em] text-zinc-700">READY_FOR_MOTION_SYNTH</span>
+                        </div>
+                        <div className="flex gap-4">
+                            <button className="flex-1 py-4 cyber-card hover:border-indigo-500/50 transition-all font-bold text-xs uppercase tracking-widest">Add Motion Keyframe</button>
+                            <button className="flex-1 py-4 cyber-card hover:border-purple-500/50 transition-all font-bold text-xs uppercase tracking-widest">Camera Path</button>
+                        </div>
+                    </div>
+                    <div className="col-span-4 space-y-4">
+                        <div className="p-6 cyber-card space-y-6">
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Motion Params</h3>
+                            <div className="space-y-4">
+                                {['Flow Intensity', 'Temporal Coherence', 'FPS Boost'].map(param => (
+                                    <div key={param} className="space-y-2">
+                                        <div className="flex justify-between text-[9px] font-bold text-zinc-500 uppercase">
+                                            <span>{param}</span>
+                                            <span>75%</span>
+                                        </div>
+                                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-indigo-500 w-3/4"></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- MÓDULO: CREATION (PRO VERSION) ---
+        const CreationPro = () => {
+            const [activeSubTab, setActiveSubTab] = useState('prompt');
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 py-4 animate-in fade-in duration-1000">
+                    <div className="lg:col-span-8 space-y-6">
+                        <div className="flex gap-4 border-b border-white/5 pb-4">
+                            {['prompt', 'image-to-image', 'control-net'].map(t => (
+                                <button key={t} onClick={() => setActiveSubTab(t)} className={`text-[10px] font-bold uppercase tracking-widest ${activeSubTab === t ? 'text-indigo-500' : 'text-zinc-500'}`}>
+                                    {t.replace('-', ' ')}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <textarea 
+                            placeholder="Descreva a visão latente..."
+                            className="w-full h-64 p-8 rounded-[2rem] glass text-xl leading-relaxed focus:border-indigo-500/50 outline-none transition-all"
+                        />
+                        
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="p-4 glass rounded-2xl">
+                                <span className="text-[9px] block text-zinc-500 font-bold uppercase mb-2">Aspect Ratio</span>
+                                <select className="bg-transparent w-full text-xs font-bold focus:outline-none"><option>16:9 Cinema</option><option>9:16 Mobile</option></select>
+                            </div>
+                            <div className="p-4 glass rounded-2xl">
+                                <span className="text-[9px] block text-zinc-500 font-bold uppercase mb-2">Engine Version</span>
+                                <select className="bg-transparent w-full text-xs font-bold focus:outline-none"><option>Venus v3.5.2</option><option>Lumina v4 Alpha</option></select>
+                            </div>
+                            <div className="p-4 glass rounded-2xl">
+                                <span className="text-[9px] block text-zinc-500 font-bold uppercase mb-2">Sampling Steps</span>
+                                <input type="number" defaultValue="35" className="bg-transparent w-full text-xs font-bold focus:outline-none" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="p-8 cyber-card glass relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4"><Badge color="emerald">Neural_Active</Badge></div>
+                            <h3 className="font-black text-sm uppercase tracking-widest mb-8">Latent Controls</h3>
+                            
+                            <div className="space-y-8">
+                                {['Anatomy', 'Structure', 'Lighting', 'Texture'].map(label => (
+                                    <div key={label} className="space-y-3">
+                                        <div className="flex justify-between text-[10px] font-bold uppercase text-zinc-500">
+                                            <span>{label}</span>
+                                            <span className="font-mono text-indigo-400">0.92</span>
+                                        </div>
+                                        <input type="range" className="w-full accent-indigo-500 h-1" />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button className="w-full mt-12 py-5 active-tab rounded-2xl font-black uppercase tracking-[0.3em] hover:scale-[1.02] transition-all text-xs">
+                                Ignite Synthesis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- APP SHELL PRINCIPAL ---
+        function App() {
+            const [activeTab, setActiveTab] = useState('creation');
+
+            const menuItems = [
+                { id: 'creation', label: 'Laboratory', icon: '◈' },
+                { id: 'cinema', label: 'Cinema Lab', icon: '◰' },
+                { id: 'workspace', label: 'Workspace', icon: '◬' },
+                { id: 'vault', label: 'Neural Vault', icon: '⧇' },
+                { id: 'system', label: 'Kernel Sys', icon: '⚙' }
+            ];
+
+            return (
+                <div className="flex h-screen overflow-hidden">
+                    {/* Sidebar Pro */}
+                    <aside className="w-64 border-r border-white/5 flex flex-col p-6 glass hidden lg:flex">
+                        <div className="mb-12">
+                            <h1 className="text-2xl font-black italic tracking-tighter">VENUS<span className="text-indigo-500">3.5</span></h1>
+                            <p className="text-[8px] font-mono text-zinc-500 tracking-[0.4em] uppercase mt-1">Advanced_Kernel_v3</p>
+                        </div>
+                        
+                        <nav className="flex-1 space-y-2">
+                            {menuItems.map(item => (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl sidebar-item text-[10px] font-black uppercase tracking-widest ${activeTab === item.id ? 'text-indigo-400 bg-indigo-500/5 border-indigo-500/50' : 'text-zinc-500'}`}
+                                >
+                                    <span className="text-lg">{item.icon}</span>
+                                    {item.label}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div className="mt-auto p-4 cyber-card bg-indigo-500/5 border-indigo-500/20">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[9px] font-bold text-indigo-400">VRAM USAGE</span>
+                                <span className="text-[9px] font-mono">6.2 / 12GB</span>
+                            </div>
+                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full bg-indigo-500 w-1/2"></div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 overflow-y-auto bg-[#020202] custom-scrollbar">
+                        <header className="h-20 border-b border-white/5 flex items-center justify-between px-10 glass sticky top-0 z-50">
+                            <div className="flex items-center gap-4">
+                                <Badge color="indigo">Core_Active</Badge>
+                                <span className="h-4 w-[1px] bg-white/10"></span>
+                                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Local_Session: 03:42:12</span>
+                            </div>
+                            <div className="flex gap-4">
+                                <button className="p-2 hover:bg-white/5 rounded-full transition-all text-zinc-400">⎋</button>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-[1px]">
+                                    <div className="w-full h-full rounded-full bg-black border-2 border-black"></div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <div className="p-10 max-w-7xl mx-auto">
+                            {activeTab === 'creation' && <CreationPro />}
+                            {activeTab === 'cinema' && <CinemaLab />}
+                            {activeTab === 'workspace' && (
+                                <div className="h-[60vh] flex flex-col items-center justify-center space-y-4 cyber-card border-dashed">
+                                    <div className="w-16 h-16 border-2 border-dashed border-zinc-800 rounded-full animate-spin flex items-center justify-center">
+                                        <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                                    </div>
+                                    <p className="text-[10px] font-mono tracking-[0.5em] text-zinc-600">WAITING_FOR_LATENT_SATELLITE...</p>
+                                </div>
+                            )}
+                            {activeTab === 'vault' && (
+                                <div className="grid grid-cols-4 gap-4">
+                                    {[1,2,3,4,5,6].map(i => (
+                                        <div key={i} className="aspect-square cyber-card group relative cursor-pointer overflow-hidden">
+                                            <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover:opacity-100 transition-all"></div>
+                                            <div className="absolute bottom-4 left-4">
+                                                <p className="text-[8px] font-bold text-indigo-400 uppercase tracking-widest">Snapshot_{i}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
