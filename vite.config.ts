@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -7,7 +6,7 @@ export default defineConfig({
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Embedder-Policy": "require-corp",
-      "Content-Type": "application/wasm"
+      // Content-Type manual removido para permitir que o Vite sirva tipos MIME corretos
     },
   },
   preview: {
@@ -51,46 +50,18 @@ export default defineConfig({
             }
           }
         ]
-      },
-      workbox: {
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:js|css|wasm)$/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'static-assets-cache'
-            }
-          }
-        ]
       }
     })
   ],
   build: {
     target: 'esnext',
     minify: 'terser',
-    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
           'tldraw-vendor': ['tldraw'],
           'pixi-vendor': ['pixi.js'],
-          'wasm-core': ['canvaskit-wasm', '@ffmpeg/ffmpeg'],
-          'ai-runtime': ['@huggingface/transformers'],
-          'utils-vendor': ['chroma-js', 'pica', 'yjs']
+          'wasm-core': ['canvaskit-wasm', '@ffmpeg/ffmpeg']
         }
       }
     }

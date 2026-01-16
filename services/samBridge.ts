@@ -1,4 +1,3 @@
-
 import { uniqueId } from "tldraw";
 
 interface SamRequest {
@@ -12,16 +11,8 @@ class SamBridgeService {
   private activeImageId: string | null = null;
 
   constructor() {
-    let workerUrl: URL;
-    try {
-      // Standard ESM resolution
-      workerUrl = new URL('../workers/sam.worker.ts', import.meta.url);
-    } catch (e) {
-      // Fallback for environments where import.meta.url might be problematic
-      // Assuming workers are served from /workers/ at the root
-      workerUrl = new URL('/workers/sam.worker.ts', window.location.origin);
-    }
-
+    // Correct way to instantiate Workers in modern ESM environments
+    const workerUrl = new URL('../workers/sam.worker.ts', import.meta.url);
     this.worker = new Worker(workerUrl, { type: 'module' });
     this.worker.onmessage = this.handleMessage.bind(this);
   }
@@ -99,7 +90,7 @@ class SamBridgeService {
         id,
         payload: {
           imageId,
-          point: [x, y], // Relative or Absolute? SAM expects coords scaled to image size
+          point: [x, y],
           originalSize: [originalWidth, originalHeight]
         }
       });

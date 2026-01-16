@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import * as Comlink from 'https://esm.sh/comlink@4.4.1';
 
@@ -7,11 +6,8 @@ export const useLuminaAI = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Robust Path Resolution: Usa window.location.origin para garantir caminho absoluto
-    // Isso evita problemas com import.meta.url em subdiretórios ou ambientes de preview
-    const workerPath = '/workers/ia.worker.ts'; 
-    const workerUrl = new URL(workerPath, window.location.origin);
-    
+    // Robust Path Resolution: Using URL constructor with import.meta.url
+    const workerUrl = new URL('../workers/ia.worker.ts', import.meta.url);
     const worker = new Worker(workerUrl, { type: 'module' });
     workerRef.current = Comlink.wrap(worker);
     

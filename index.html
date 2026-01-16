@@ -1,19 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Latent Cinema Studio</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <script src="https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@latest/coi-serviceworker.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="https://esm.sh/tldraw@3.5.0/tldraw.css" />
-    <link href="https://releases.transloadit.com/uppy/v3.23.0/uppy.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="https://esm.sh/tldraw@3.5.0/tldraw.css" crossorigin="anonymous" />
+    <link href="https://releases.transloadit.com/uppy/v3.23.0/uppy.min.css" rel="stylesheet" crossorigin="anonymous">
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
     
@@ -35,33 +36,6 @@
             --color-background: #050505;
             --color-primary: #4f46e5;
         }
-        
-        @keyframes scan-y {
-          from { transform: translateY(0); }
-          to { transform: translateY(100%); }
-        }
-        .animate-scan-y { animation: scan-y 2s linear infinite; }
-
-        .tp-dfwv {
-            z-index: 2000 !important;
-            border-radius: 12px !important;
-            overflow: hidden !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            background-color: rgba(10, 10, 12, 0.95) !important;
-            backdrop-filter: blur(20px) !important;
-        }
-
-        .minimal-ui .hide-in-minimal {
-            display: none !important;
-        }
-
-        .swatch-glow {
-            box-shadow: 0 0 15px var(--swatch-color);
-        }
-
-        /* Safely handle notched displays */
-        .safe-area-inset-top { padding-top: env(safe-area-inset-top); }
-        .safe-area-inset-bottom { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 <script type="importmap">
 {
@@ -105,6 +79,6 @@
 </head>
 <body>
     <div id="root" class="h-screen w-screen overflow-hidden flex flex-col"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

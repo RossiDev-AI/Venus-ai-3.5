@@ -1,4 +1,3 @@
-
 import * as PIXI from 'pixi.js';
 import { TLShapeId, Editor } from 'tldraw';
 import { filterManager } from './FilterManager';
@@ -24,17 +23,38 @@ export class LuminaEngine {
                 resizeTo: container,
                 backgroundAlpha: 0,
                 antialias: true,
-                preference: 'webgl', // Prefer WebGL for filters
+                preference: 'webgl', 
                 resolution: window.devicePixelRatio || 2,
                 autoDensity: true,
-                hello: true // Debug log to confirm Pixi version
+                hello: true 
             });
+            
+            // WebGL Context Recovery Logic
+            const canvas = this.app.canvas as HTMLCanvasElement;
+            canvas.addEventListener('webglcontextlost', (event) => {
+                event.preventDefault();
+                console.warn('Lumina Engine: WebGL Context Lost. Attempting recovery...');
+            }, false);
+
+            canvas.addEventListener('webglcontextrestored', () => {
+                console.log('Lumina Engine: WebGL Context Restored.');
+                // Força re-render de todos os ativos
+                this.refreshAllSprites();
+            }, false);
+
             container.appendChild(this.app.canvas);
             this.isInitialized = true;
             console.log('Lumina Engine: GPU Context Acquired');
         } catch (e) {
             console.error('Lumina Engine: Failed to initialize WebGL context', e);
         }
+    }
+
+    private refreshAllSprites() {
+        this.symbols.clear();
+        this.sprites.forEach((sprite, id) => {
+            sprite.renderable = true;
+        });
     }
 
     /**
@@ -81,7 +101,6 @@ export class LuminaEngine {
         }
 
         displayObject.renderable = true;
-        // Use editor bounds to position and size the sprite accurately on the canvas
         displayObject.x = bounds.x;
         displayObject.y = bounds.y;
         displayObject.width = bounds.width;

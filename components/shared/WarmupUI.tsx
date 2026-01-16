@@ -1,23 +1,34 @@
-
 import React, { useEffect, useState } from 'react';
 import { warmupManager, WarmupTask } from '../../engines/lumina/core/WarmupManager';
-import { motion, AnimatePresence } from 'https://esm.sh/framer-motion@10.16.4';
-import { Cpu, ShieldCheck, Zap, AlertTriangle } from 'lucide-react';
+import { motion } from 'https://esm.sh/framer-motion@10.16.4';
+import { Cpu, ShieldCheck, Zap, AlertTriangle, ArrowRight } from 'lucide-react';
 
 export const WarmupUI: React.FC = () => {
     const [tasks, setTasks] = useState<WarmupTask[]>(warmupManager.getTasks());
     const [isVisible, setIsVisible] = useState(true);
+    const [showSkip, setShowSkip] = useState(false);
 
     useEffect(() => {
         const handleUpdate = (newTasks: WarmupTask[]) => {
             setTasks(newTasks);
             // Oculta a UI se tudo estiver pronto ou indisponível
-            if (newTasks.every(t => ['ready', 'unavailable'].includes(t.status))) {
-                setTimeout(() => setIsVisible(false), 1500);
+            if (newTasks.every(t => ['ready', 'unavailable', 'error'].includes(t.status))) {
+                setTimeout(() => setIsVisible(false), 800);
             }
         };
         warmupManager.on('update', handleUpdate);
-        return () => { warmupManager.off('update', handleUpdate); };
+        
+        // Failsafe: Mostra botão de pular após 3s se travar
+        const skipTimer = setTimeout(() => setShowSkip(true), 3000);
+        
+        // Failsafe Absoluto: Fecha forçadamente após 8s
+        const forceCloseTimer = setTimeout(() => setIsVisible(false), 8000);
+
+        return () => { 
+            warmupManager.off('update', handleUpdate);
+            clearTimeout(skipTimer);
+            clearTimeout(forceCloseTimer);
+        };
     }, []);
 
     if (!isVisible) return null;
@@ -54,11 +65,11 @@ export const WarmupUI: React.FC = () => {
                                 </span>
                                 <span className={`text-[8px] font-black uppercase ${
                                     task.status === 'ready' ? 'text-emerald-500' : 
-                                    task.status === 'unavailable' ? 'text-amber-500' : 
+                                    task.status === 'unavailable' || task.status === 'error' ? 'text-amber-500' : 
                                     'text-indigo-400'
                                 }`}>
                                     {task.status === 'ready' ? 'Ready' : 
-                                     task.status === 'unavailable' ? 'Unavailable' : 
+                                     task.status === 'unavailable' || task.status === 'error' ? 'Bypassed' : 
                                      `${Math.round(task.progress)}%`}
                                 </span>
                             </div>
@@ -77,26 +88,26 @@ export const WarmupUI: React.FC = () => {
                     ))}
                 </div>
 
-                <div className="pt-8 flex flex-col items-center gap-4">
-                    <div className="flex items-center gap-6 opacity-30">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck size={12} className={warmupManager.multiThreaded ? "text-emerald-500" : "text-zinc-500"} />
-                            <span className="text-[7px] font-black uppercase text-zinc-500">
-                                {warmupManager.multiThreaded ? 'SharedArrayBuffer Active' : 'Single Thread Fallback'}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Zap size={12} className="text-indigo-500" />
-                            <span className="text-[7px] font-black uppercase text-zinc-500">WebGPU Pipeline</span>
-                        </div>
-                    </div>
-                    
-                    {!warmupManager.aiEnabled && (
-                        <div className="flex items-center gap-2 px-4 py-2 bg-amber-600/10 border border-amber-500/20 rounded-xl animate-in fade-in slide-in-from-bottom-2">
-                            <AlertTriangle size={12} className="text-amber-500" />
-                            <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">
-                                Browser incompatibility: AI Modules disabled.
-                            </span>
+                <div className="pt-4 flex flex-col items-center gap-4 min-h-[60px]">
+                    {showSkip ? (
+                        <button 
+                            onClick={() => setIsVisible(false)}
+                            className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-white/10 transition-all animate-in fade-in"
+                        >
+                            Forçar Início <ArrowRight size={12} />
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-6 opacity-30">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck size={12} className={warmupManager.multiThreaded ? "text-emerald-500" : "text-zinc-500"} />
+                                <span className="text-[7px] font-black uppercase text-zinc-500">
+                                    {warmupManager.multiThreaded ? 'SharedArrayBuffer Active' : 'Standard Mode'}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Zap size={12} className="text-indigo-500" />
+                                <span className="text-[7px] font-black uppercase text-zinc-500">WebGPU Pipeline</span>
+                            </div>
                         </div>
                     )}
                 </div>

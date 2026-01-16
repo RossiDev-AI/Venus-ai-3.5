@@ -1,4 +1,3 @@
-
 import { BatchItem, BatchMacro, BatchAction } from '../../../types';
 import { storageManager } from './StorageManager';
 import JSZip from 'jszip';
@@ -9,9 +8,6 @@ export class BatchManager {
     private maxWorkers = navigator.hardwareConcurrency || 4;
     private onProgressUpdate: (p: number, items: BatchItem[]) => void = () => {};
 
-    /**
-     * Inicia a frota de processamento paralelo.
-     */
     async processLote(files: File[], macro: BatchMacro, onUpdate: any): Promise<void> {
         this.onProgressUpdate = onUpdate;
         this.queue = files.map(f => ({
@@ -23,7 +19,6 @@ export class BatchManager {
 
         this.updateUI();
 
-        // Disparar workers iniciais
         for (let i = 0; i < Math.min(this.maxWorkers, this.queue.length); i++) {
             this.processNext(macro);
         }
@@ -37,35 +32,44 @@ export class BatchManager {
         item.status = 'processing';
         this.updateUI();
 
-        // Instanciar Worker Único por Tarefa (Isolamento)
-        const worker = new Worker(new URL('../workers/Batch.worker.ts', import.meta.url), { type: 'module' });
-        
-        worker.onmessage = async (e) => {
-            const { type, blob, message } = e.data;
+        try {
+            // Fix: Caminho relativo consistente com o WarmupManager
+            const workerUrl = new URL('../workers/Batch.worker.ts', import.meta.url);
+            const worker = new Worker(workerUrl, { type: 'module' });
+            
+            worker.onmessage = async (e) => {
+                const { type, blob, message } = e.data;
 
-            if (type === 'SUCCESS') {
-                item.status = 'done';
-                item.progress = 100;
-                // Salvar no OPFS para persistência resiliente
-                const opfsId = await storageManager.storeAsset(`batch_${item.id}`, blob);
-                item.resultId = opfsId;
-            } else {
-                item.status = 'error';
-                item.error = message;
-            }
+                if (type === 'SUCCESS') {
+                    item.status = 'done';
+                    item.progress = 100;
+                    const opfsId = await storageManager.storeAsset(`batch_${item.id}`, blob);
+                    item.resultId = opfsId;
+                } else {
+                    item.status = 'error';
+                    item.error = message;
+                }
 
+                this.activeWorkers--;
+                worker.terminate();
+                this.updateUI();
+                this.processNext(macro);
+            };
+
+            worker.postMessage({
+                id: item.id,
+                file: item.file,
+                macro: macro,
+                options: { format: 'image/jpeg', quality: 0.85 }
+            });
+        } catch (e) {
+            console.error("Batch Worker Error:", e);
+            item.status = 'error';
+            item.error = "Worker Init Failed";
             this.activeWorkers--;
-            worker.terminate();
             this.updateUI();
-            this.processNext(macro); // Puxar próximo da fila
-        };
-
-        worker.postMessage({
-            id: item.id,
-            file: item.file,
-            macro: macro,
-            options: { format: 'image/jpeg', quality: 0.85 }
-        });
+            this.processNext(macro);
+        }
     }
 
     private updateUI() {
@@ -74,9 +78,6 @@ export class BatchManager {
         this.onProgressUpdate(totalProgress, [...this.queue]);
     }
 
-    /**
-     * Coleta todos os resultados do OPFS e gera um ZIP Master.
-     */
     async exportZip(): Promise<Blob> {
         const zip = new JSZip();
         const root = await navigator.storage.getDirectory();

@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { track, useEditor } from 'tldraw';
-import { Combine, Scissors, Union, Square, Target, MousePointer2 } from 'lucide-react';
+import { Combine, Scissors, Merge, Square, Target, MousePointer2 } from 'lucide-react';
 import { vectorManager, PathfinderOp } from '../../../engines/lumina/core/VectorManager';
 import { toast } from 'sonner';
 
@@ -43,7 +42,7 @@ export const VectorInspector = track(() => {
 
                 <div className="grid grid-cols-4 gap-2">
                     {[
-                        { id: PathfinderOp.UNION, icon: Union, label: 'Unir' },
+                        { id: PathfinderOp.UNION, icon: Merge, label: 'Unir' },
                         { id: PathfinderOp.DIFFERENCE, icon: Scissors, label: 'Subtrair' },
                         { id: PathfinderOp.INTERSECT, icon: Target, label: 'Interseção' },
                         { id: PathfinderOp.XOR, icon: Combine, label: 'Excluir' }

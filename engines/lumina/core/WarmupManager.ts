@@ -12,9 +12,14 @@ export class WarmupManager {
     private listeners: { [key: string]: Function[] } = {};
     private tasks: Map<string, WarmupTask> = new Map();
     public aiEnabled: boolean = true;
-    public multiThreaded: boolean = Capabilities.canUseMultithreading;
+    public multiThreaded: boolean = false;
 
     constructor() {
+        // Detecção nativa imediata. Se não houver SAB, o sistema aceita o modo Standard.
+        this.multiThreaded = typeof SharedArrayBuffer !== 'undefined' && window.crossOriginIsolated;
+        if (!this.multiThreaded) {
+            console.warn('Venus Kernel: SharedArrayBuffer indisponível. Operando em modo Single-Thread (Standard).');
+        }
         this.registerTasks();
     }
 
@@ -38,7 +43,7 @@ export class WarmupManager {
 
     private registerTasks() {
         this.tasks.set('canvaskit', { id: 'canvaskit', label: 'Skia Vector Engine', progress: 0, status: 'pending' });
-        this.tasks.set('ffmpeg', { id: 'ffmpeg', label: `FFmpeg (${this.multiThreaded ? 'MT' : 'ST'})`, progress: 0, status: 'pending' });
+        this.tasks.set('ffmpeg', { id: 'ffmpeg', label: `FFmpeg (${this.multiThreaded ? 'Parallel' : 'Single-Thread'})`, progress: 0, status: 'pending' });
         this.tasks.set('sam', { id: 'sam', label: `Segment AI (${Capabilities.hasWebGPU ? 'WebGPU' : 'WASM'})`, progress: 0, status: 'pending' });
     }
 
@@ -55,70 +60,80 @@ export class WarmupManager {
     }
 
     async ignite() {
-        console.log(`Venus Kernel: Critical Init Start. MultiThreaded: ${this.multiThreaded}`);
+        console.log(`Venus Kernel: Ignite init. Multi-threaded: ${this.multiThreaded}`);
         
-        // Timer de resiliência: 10 segundos
+        // Timeout global de segurança reduzido para não prender o usuário
         const kernelTimeout = setTimeout(() => {
-            console.error("Ambiente restrito: Módulos de carga pesada desativados por Timeout.");
+            console.warn("Venus Kernel: Timeout global. Forçando liberação da UI.");
             this.handleTimeoutFallback();
-        }, 10000);
+        }, 5000); 
 
         try {
-            // Handshake do AI Worker - Usando caminho relativo correto para o bundle
-            const samHealthPromise = this.handshakeWorker('../workers/AI.worker.ts');
+            // Handshake do AI Worker - Non-blocking soft fail
+            const samHealthPromise = this.handshakeWorker();
             
-            // Carregamento Progressivo WASM (Exemplo Skia)
-            const ckPromise = this.loadWithProgress('canvaskit', 'https://unpkg.com/canvaskit-wasm@0.39.1/bin/canvaskit.wasm');
+            // Carregamento Progressivo WASM (Skia) - Non-blocking soft fail
+            const ckPromise = this.loadWithProgress('canvaskit', 'https://unpkg.com/canvaskit-wasm@0.39.1/bin/canvaskit.wasm')
+                .catch(() => this.updateTask('canvaskit', { status: 'unavailable' }));
 
             await Promise.all([samHealthPromise, ckPromise]);
             
             clearTimeout(kernelTimeout);
-            console.log("Venus Kernel: Full Acceleration Active.");
+            console.log("Venus Kernel: Inicialização concluída.");
         } catch (e) {
-            console.warn("Venus Kernel: Partial Failure. Transitioning to Recovery Mode.", e);
+            console.warn("Venus Kernel: Falha na aceleração. Continuando em modo Standard.", e);
             this.handleTimeoutFallback();
         }
     }
 
     private handleTimeoutFallback() {
         this.aiEnabled = false;
-        const pending = Array.from(this.tasks.values()).filter(t => t.status === 'loading' || t.status === 'pending');
-        pending.forEach(t => {
-            if (t.id !== 'canvaskit') { // Skia é o único obrigatório para o fallback
-                this.updateTask(t.id, { status: 'unavailable', label: `${t.label} (Blocked)` });
+        this.tasks.forEach(t => {
+            if (t.status === 'pending' || t.status === 'loading') {
+                // Marca tudo que não carregou como indisponível para liberar a UI
+                this.updateTask(t.id, { status: 'unavailable', label: `${t.label} (Offline)` });
             }
         });
     }
 
-    private async handshakeWorker(path: string): Promise<void> {
-        return new Promise((resolve, reject) => {
+    private async handshakeWorker(): Promise<void> {
+        return new Promise((resolve) => {
+            // Timeout agressivo de 2 segundos para o worker. 
+            // Se não responder PONG em 2s, assume falha e libera a UI.
+            const timeout = setTimeout(() => {
+                console.warn("Worker Handshake Timed Out (2s). Skipping AI.");
+                this.updateTask('sam', { status: 'unavailable' });
+                resolve();
+            }, 2000);
+
             try {
-                // Resolver URL relativa ao módulo atual para garantir que o Vite/Browser encontre o arquivo
-                const workerUrl = new URL(path, import.meta.url).href;
+                // Caminho relativo robusto para bundlers modernos
+                const workerUrl = new URL('../workers/AI.worker.ts', import.meta.url);
                 const worker = new Worker(workerUrl, { type: 'module' });
                 
                 worker.onmessage = (e) => {
                     if (e.data === 'PONG') {
+                        clearTimeout(timeout);
                         worker.terminate();
+                        this.updateTask('sam', { status: 'ready', progress: 100 });
                         resolve();
                     }
                 };
                 
                 worker.onerror = (err) => {
-                    // Log detalhado para diagnosticar falhas de carregamento/CORS
-                    console.error(`[WORKER_HANDSHAKE_FAIL]: ${path}`, {
-                        message: err.message,
-                        filename: err.filename,
-                        lineno: err.lineno
-                    });
+                    clearTimeout(timeout);
+                    console.warn("Kernel Worker Failure:", err);
                     worker.terminate();
-                    reject(new Error(`Worker execution failed: ${path}`));
+                    this.updateTask('sam', { status: 'unavailable' });
+                    resolve(); 
                 };
 
                 worker.postMessage('PING');
             } catch (e) {
-                console.error(`[WORKER_CREATION_FAIL]: ${path}`, e);
-                reject(e);
+                clearTimeout(timeout);
+                console.warn("Worker Constructor Failed:", e);
+                this.updateTask('sam', { status: 'unavailable' });
+                resolve();
             }
         });
     }
@@ -127,7 +142,7 @@ export class WarmupManager {
         this.updateTask(taskId, { status: 'loading' });
         try {
             const response = await fetch(url);
-            if (!response.body) throw new Error("No body");
+            if (!response.body) throw new Error("Fetch stream failed");
             
             const reader = response.body.getReader();
             const contentLength = +(response.headers.get('Content-Length') || 0);
@@ -142,8 +157,9 @@ export class WarmupManager {
             }
             this.updateTask(taskId, { status: 'ready', progress: 100 });
         } catch (e) {
-            console.error(`Fetch Failure for ${taskId}:`, e);
+            console.warn(`Failed to load ${taskId}`, e);
             this.updateTask(taskId, { status: 'error' });
+            throw e; // Repassa erro para ser tratado no ignite
         }
     }
 }
