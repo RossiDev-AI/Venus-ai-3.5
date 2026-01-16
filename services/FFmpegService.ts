@@ -1,6 +1,9 @@
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { warmupManager } from '../engines/lumina/core/WarmupManager';
+import { Capabilities } from '../utils/Capabilities';
+import { toast } from 'sonner';
 
 export class FFmpegService {
   private static instance: FFmpeg | null = null;
@@ -8,7 +11,6 @@ export class FFmpegService {
 
   static async getFFmpeg() {
     if (this.instance) return this.instance;
-    
     const ffmpeg = new FFmpeg();
     this.instance = ffmpeg;
     return ffmpeg;
@@ -18,22 +20,40 @@ export class FFmpegService {
     const ffmpeg = await this.getFFmpeg();
     if (this.isLoaded) return ffmpeg;
 
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
+    const useMultithread = Capabilities.canUseMultithreading;
+    
+    // Fallback dinâmico para versão Single Thread se não houver isolamento
+    const baseURL = useMultithread 
+        ? 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
+        : 'https://unpkg.com/@ffmpeg/core-st@0.12.6/dist/esm';
+    
+    if (!useMultithread) {
+        console.warn("FFmpeg: Carregando Core Single-Thread por restrição de ambiente.");
+    }
 
-    ffmpeg.on('log', ({ message }) => {
-      if (onLog) onLog(message);
-    });
+    try {
+        // Correção Crítica: Usar toBlobURL para evitar bloqueio de scripts externos no Firefox
+        const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+        const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
 
-    this.isLoaded = true;
+        await ffmpeg.load({
+          coreURL,
+          wasmURL,
+        });
+
+        ffmpeg.on('log', ({ message }) => {
+          if (onLog) onLog(message);
+        });
+
+        this.isLoaded = true;
+        warmupManager.updateTask('ffmpeg', { status: 'ready', progress: 100 });
+    } catch (e) {
+        console.error("FFmpeg: Falha crítica na inicialização do Kernel WASM.", e);
+        warmupManager.updateTask('ffmpeg', { status: 'error' });
+        toast.error("Erro no motor de vídeo.");
+    }
+    
     return ffmpeg;
-  }
-
-  static isSharedArrayBufferSupported() {
-    return typeof SharedArrayBuffer !== 'undefined';
   }
 
   static async transcode(
@@ -48,7 +68,6 @@ export class FFmpegService {
       if (onProgress) onProgress(progress * 100);
     });
 
-    // Write frames to virtual FS
     for (let i = 0; i < frames.length; i++) {
       const num = i.toString().padStart(5, '0');
       await ffmpeg.writeFile(`frame_${num}.png`, await fetchFile(frames[i]));
@@ -64,10 +83,9 @@ export class FFmpegService {
     ];
 
     await ffmpeg.exec(args);
-
     const data = await ffmpeg.readFile(outputName);
     
-    // Cleanup
+    // Cleanup virtual FS
     for (let i = 0; i < frames.length; i++) {
         const num = i.toString().padStart(5, '0');
         await ffmpeg.deleteFile(`frame_${num}.png`);

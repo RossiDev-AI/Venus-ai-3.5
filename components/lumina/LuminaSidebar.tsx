@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useEditor, TLShape, track } from 'tldraw';
 import { Layers, Sliders, Sparkles, Target, Grid, Download, Type, Box, History, Zap, Shapes, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'https://esm.sh/framer-motion@10.16.4';
+import { Capabilities } from '../../utils/Capabilities';
 import { NodeInspector } from './panels/NodeInspector';
 import { CatalogBrowser } from './panels/CatalogBrowser';
 import { NeuralCore } from './panels/NeuralCore';
@@ -26,24 +27,26 @@ export const LuminaSidebar = track(() => {
     if (selection?.type === 'lumina-vector') setActiveTab('VECTOR');
   }, [selection]);
 
+  const tabs = [
+    { id: 'PROPS', label: 'Nodes', icon: Sliders },
+    { id: 'VECTOR', label: 'Path', icon: Shapes },
+    { id: 'CATALOG', label: 'Catalog', icon: Grid },
+    { id: 'NEURAL', label: 'AI Core', icon: Sparkles, restricted: !Capabilities.canUseMultithreading },
+    { id: 'REVIEW', label: 'Review', icon: Users },
+    { id: 'BATCH', label: 'Batch', icon: Zap, restricted: !Capabilities.canUseMultithreading },
+    { id: 'HISTORY', label: 'History', icon: History },
+    { id: 'PLUGINS', label: 'Plugins', icon: Box },
+    { id: 'LAYERS', label: 'Stack', icon: Layers }
+  ];
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden text-zinc-400 select-none bg-[#0c0c0e]">
       <div className="flex bg-[#0e0e11] border-b border-white/5 h-20 shrink-0 p-2 gap-1 overflow-x-auto no-scrollbar">
-        {[
-            { id: 'PROPS', label: 'Nodes', icon: Sliders },
-            { id: 'VECTOR', label: 'Path', icon: Shapes },
-            { id: 'CATALOG', label: 'Catalog', icon: Grid },
-            { id: 'NEURAL', label: 'AI Core', icon: Sparkles },
-            { id: 'REVIEW', label: 'Review', icon: Users },
-            { id: 'BATCH', label: 'Batch', icon: Zap },
-            { id: 'HISTORY', label: 'History', icon: History },
-            { id: 'PLUGINS', label: 'Plugins', icon: Box },
-            { id: 'LAYERS', label: 'Stack', icon: Layers }
-        ].map(t => (
+        {tabs.map(t => (
             <button 
                 key={t.id}
                 onClick={() => setActiveTab(t.id as any)}
-                className={`flex-1 min-w-[65px] flex flex-col items-center justify-center gap-1.5 transition-all rounded-2xl relative ${activeTab === t.id ? 'text-white bg-white/[0.04] shadow-xl' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'}`}
+                className={`flex-1 min-w-[65px] flex flex-col items-center justify-center gap-1.5 transition-all rounded-2xl relative ${activeTab === t.id ? 'text-white bg-white/[0.04] shadow-xl' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'} ${t.restricted ? 'opacity-30' : ''}`}
             >
                 <t.icon size={18} />
                 <span className="text-[8px] font-black uppercase tracking-[0.2em]">{t.label}</span>
@@ -59,7 +62,15 @@ export const LuminaSidebar = track(() => {
             {activeTab === 'PROPS' && <NodeInspector key="props" editor={editor} selection={selection} />}
             {activeTab === 'VECTOR' && <VectorInspector key="vector" />}
             {activeTab === 'CATALOG' && <CatalogBrowser key="catalog" editor={editor} />}
-            {activeTab === 'NEURAL' && <NeuralCore key="neural" editor={editor} />}
+            {activeTab === 'NEURAL' && (
+                Capabilities.canUseMultithreading 
+                    ? <NeuralCore key="neural" editor={editor} />
+                    : <div className="p-12 text-center space-y-4 opacity-50 flex flex-col items-center justify-center h-full">
+                        <Sparkles size={48} className="text-zinc-700" />
+                        <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">IA Core Requer Isolamento de Memória</p>
+                        <p className="text-[8px] mono text-zinc-600">Altere as configurações do browser para habilitar SharedArrayBuffer.</p>
+                      </div>
+            )}
             {activeTab === 'REVIEW' && <ReviewPanel key="review" />}
             {activeTab === 'BATCH' && <BatchPanel key="batch" />}
             {activeTab === 'HISTORY' && <HistoryPanel key="history" />}
@@ -95,7 +106,9 @@ export const LuminaSidebar = track(() => {
             >
                 <Download size={14} /> Export Master
             </button>
-            <span className="text-[9px] mono text-indigo-500 font-black tracking-tighter bg-indigo-500/10 px-2 py-0.5 rounded">REVIEW_P2P_v1.0</span>
+            <span className="text-[9px] mono text-indigo-500 font-black tracking-tighter bg-indigo-500/10 px-2 py-0.5 rounded">
+                {Capabilities.engineType.split(' ')[0]}
+            </span>
       </div>
 
       <ExportDialog isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />

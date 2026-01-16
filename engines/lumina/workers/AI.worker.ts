@@ -1,60 +1,39 @@
 
 import { pipeline, env, RawImage } from 'https://esm.sh/@huggingface/transformers@3.0.0-alpha.19';
 
-// Configuração para processamento em browser com cache agressivo
+// Configuração para SharedArrayBuffer (SharedWorker-ready)
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
 class NeuralAIKernel {
     static segmentationInstance: any = null;
-    static depthInstance: any = null;
 
-    static async getSegmenter(progressCallback: (p: any) => void) {
+    static async getSegmenter(device: string, onProgress: (p: any) => void) {
         if (!this.segmentationInstance) {
+            // Em transformers.js v3, o progress_callback reporta estágios de download
             this.segmentationInstance = await pipeline('image-segmentation', 'Xenova/rmbg-1.4', {
-                progress_callback: progressCallback,
-                device: 'webgpu'
+                progress_callback: onProgress,
+                device: device // 'webgpu', 'wasm' ou 'webgl'
             });
         }
         return this.segmentationInstance;
     }
-
-    static async getDepthEstimator(progressCallback: (p: any) => void) {
-        if (!this.depthInstance) {
-            // DepthAnything é o estado da arte para guiar difusão mantendo perspectiva
-            this.depthInstance = await pipeline('depth-estimation', 'Xenova/depth-anything-small-hf', {
-                progress_callback: progressCallback,
-                device: 'webgpu'
-            });
-        }
-        return this.depthInstance;
-    }
 }
 
 self.onmessage = async (e: MessageEvent) => {
-    const { type, buffer, width, height, id, options } = e.data;
+    // 1. Handshake Check
+    if (e.data === 'PING') {
+        self.postMessage('PONG');
+        return;
+    }
+
+    const { type, buffer, width, height, id, device = 'wasm' } = e.data;
 
     try {
-        if (type === 'EXTRACT_STRUCTURE') {
-            const depthEstimator = await NeuralAIKernel.getDepthEstimator((p) => {
-                self.postMessage({ type: 'PROGRESS', payload: p });
-            });
-
-            // Converte buffer RGBA para formato RawImage
-            const image = new RawImage(new Uint8ClampedArray(buffer), width, height, 4);
-            const result = await depthEstimator(image);
-            
-            // O mapa de profundidade é essencial para o Generative Fill manter a escala
-            const depthCanvas = await result.depth.toCanvas();
-            const depthData = depthCanvas.toDataURL('image/png');
-
-            self.postMessage({ type: 'STRUCTURE_SUCCESS', id, depthData });
-            return;
-        }
-
         if (type === 'REMOVE_BG') {
-            const segmenter = await NeuralAIKernel.getSegmenter((p) => {
-                self.postMessage({ type: 'PROGRESS', payload: p });
+            const segmenter = await NeuralAIKernel.getSegmenter(device, (p) => {
+                // Reporta progresso real para a UI principal
+                self.postMessage({ type: 'PROGRESS', id, payload: p });
             });
             const image = new RawImage(new Uint8ClampedArray(buffer), width, height, 4);
             const result = await segmenter(image);
@@ -63,7 +42,6 @@ self.onmessage = async (e: MessageEvent) => {
             self.postMessage({ type: 'SUCCESS', id, maskData });
         }
     } catch (error: any) {
-        console.error("AI Worker Error:", error);
-        self.postMessage({ type: 'ERROR', message: error.message });
+        self.postMessage({ type: 'ERROR', id, message: error.message });
     }
 };
