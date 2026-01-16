@@ -1,4 +1,3 @@
-
 /**
  * Pixel Kernel IO & Algorithms:
  * Gerencia OPFS e agora inclui o motor de Poisson Blending para a Patch Tool.
@@ -15,19 +14,16 @@ self.onmessage = async (e: MessageEvent) => {
             const dst = new Uint8ClampedArray(targetBuffer);
             const mask = new Uint8ClampedArray(maskBuffer);
             
-            // Resultado inicial é o destino
             const result = new Uint8ClampedArray(targetBuffer);
             
-            // 1. Pré-calcular o Laplaciano da Origem (v = grad(Source))
             const laplacian = new Float32Array(width * height * 3);
             for (let y = 1; y < height - 1; y++) {
                 for (let x = 1; x < width - 1; x++) {
                     const idx = (y * width + x) * 4;
-                    if (mask[idx + 3] === 0) continue; // Pular áreas fora da máscara
+                    if (mask[idx + 3] === 0) continue;
 
                     for (let c = 0; c < 3; c++) {
                         const lIdx = (y * width + x) * 3 + c;
-                        // div(v) = 4*I(x,y) - I(x-1,y) - I(x+1,y) - I(x,y-1) - I(x,y+1)
                         laplacian[lIdx] = 4 * src[idx + c] 
                                         - src[((y - 1) * width + x) * 4 + c] 
                                         - src[((y + 1) * width + x) * 4 + c]
@@ -37,8 +33,6 @@ self.onmessage = async (e: MessageEvent) => {
                 }
             }
 
-            // 2. Solver Iterativo de Jacobi
-            // Resolve: 4*f(p) = sum(f(q)) + laplacian(p)
             for (let iter = 0; iter < iterations; iter++) {
                 const current = new Uint8ClampedArray(result);
                 for (let y = 1; y < height - 1; y++) {
@@ -63,7 +57,6 @@ self.onmessage = async (e: MessageEvent) => {
             return;
         }
 
-        // ... (resto do worker permanece igual)
         if (type === 'VECTORIZE') {
             const { buffer, width, height } = payload;
             const pixels = new Uint8ClampedArray(buffer);
@@ -75,8 +68,7 @@ self.onmessage = async (e: MessageEvent) => {
         const root = await navigator.storage.getDirectory();
         if (type === 'SYNC_WRITE') {
             const fileHandle = await root.getFileHandle(`${id}.bin`, { create: true });
-            // @ts-ignore
-            const accessHandle = await fileHandle.createSyncAccessHandle();
+            const accessHandle = await (fileHandle as any).createSyncAccessHandle();
             accessHandle.write(payload);
             accessHandle.flush();
             accessHandle.close();

@@ -36,9 +36,9 @@ const FRAG_SRC = `
     float hue2rgb(float p, float q, float t) {
         if (t < 0.0) t += 1.0;
         if (t > 1.0) t -= 1.0;
-        if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
+        if (t < 1.0 / 6.0) return p + (q - p) * 6.0 * t;
         if (t < 1.2) return q;
-        if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
+        if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
         return p;
     }
 
@@ -47,7 +47,7 @@ const FRAG_SRC = `
         if (s == 0.0) return vec3(l);
         float q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
         float p = 2.0 * l - q;
-        return vec3(hue2rgb(p, q, h + 1.0/3.0), hue2rgb(p, q, h), hue2rgb(p, q, h - 1.0/3.0));
+        return vec3(hue2rgb(p, q, h + 1.0 / 3.0), hue2rgb(p, q, h), hue2rgb(p, q, h - 1.0 / 3.0));
     }
 
     void main() {
@@ -87,7 +87,6 @@ export class LuminaAdjustmentFilter extends PIXI.Filter {
         });
     }
 
-    // Fix: Accessing resources via any cast to satisfy TS compiler in Pixi v8 environments
     update(props: any) {
         const u = (this as any).resources.adjustmentUniforms.uniforms;
         u.brightness = props.brightness ?? 1.0;

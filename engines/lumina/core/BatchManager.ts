@@ -33,7 +33,6 @@ export class BatchManager {
         this.updateUI();
 
         try {
-            // Caminho absoluto para a raiz do projeto
             const workerUrl = new URL('/engines/lumina/workers/Batch.worker.ts', import.meta.url);
             const worker = new Worker(workerUrl, { type: 'module' });
             
@@ -84,7 +83,9 @@ export class BatchManager {
 
         for (const item of this.queue) {
             if (item.status === 'done' && item.resultId) {
-                const fileName = item.resultId.split('//')[1];
+                // Safer splitting for opfs:// path
+                const parts = item.resultId.split("://");
+                const fileName = parts.length > 1 ? parts[1] : parts[0];
                 const fileHandle = await root.getFileHandle(fileName);
                 const file = await fileHandle.getFile();
                 zip.file(item.file.name.replace(/\.[^/.]+$/, "") + "_lumina.jpg", file);

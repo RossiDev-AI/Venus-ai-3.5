@@ -1,9 +1,13 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import { QueryClient, QueryClientProvider } from "https://esm.sh/@tanstack/react-query@5.28.4";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from 'sonner';
+
+// Imports de Layout
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
+
+// Imports de Labs/Modais
 import Workspace from './components/workspace/Workspace';
 import Vault from './components/vault/Vault';
 import ManualNode from './components/manual/ManualNode';
@@ -13,13 +17,24 @@ import CreationLab from './components/creation/CreationLab';
 import GradingLab from './components/grading/GradingLab';
 import SettingsLab from './components/settings/SettingsLab';
 import DocsLab from './components/docs/DocsLab';
+
+// Core Engines e UI
 import { WarmupUI } from './components/shared/WarmupUI';
 import { warmupManager } from './engines/lumina/core/WarmupManager';
-import { VaultItem, AgentStatus, LatentParams, LatentGrading, VisualAnchor, CinemaProject, SubtitleSettings, AppSettings } from './types';
 import { getAllNodes, saveNode, deleteNode } from './dbService';
+import { VaultItem, LatentParams, AgentStatus, AppSettings } from './types';
 
-const queryClient = new QueryClient();
+// Configuração do Cliente de Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
+// Lazy Loading para o módulo mais pesado
 const LuminaStudio = React.lazy(() => import('./components/lumina/LuminaStudio'));
 
 const DEFAULT_PARAMS: LatentParams = {
@@ -40,19 +55,6 @@ const DEFAULT_PARAMS: LatentParams = {
   }
 };
 
-const DEFAULT_SUBTITLES: SubtitleSettings = {
-  fontSize: 16,
-  fontColor: '#ffffff',
-  backgroundColor: '#000000',
-  fontFamily: 'Inter',
-  bgOpacity: 0.7,
-  textAlign: 'center',
-  paddingHMult: 1.2,
-  paddingVMult: 1.2,
-  radiusMult: 0.8,
-  marginMult: 2.5
-};
-
 const DEFAULT_SETTINGS: AppSettings = {
   pexelsApiKey: '',
   unsplashAccessKey: '',
@@ -60,57 +62,49 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'creation' | 'workspace' | 'vault' | 'manual' | 'fusion' | 'cinema' | 'grading' | 'lumina' | 'settings' | 'docs'>('creation');
-  const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
-  const [appSettings, setAppSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('venus_app_settings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+  const [activeTab, setActiveTab] = useState('creation');
+  // Removed explicit <VaultItem[]> generic to avoid parser issues
+  const [vaultItems, setVaultItems] = useState([]); 
+  const [appSettings, setAppSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('venus_app_settings');
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
   });
   
+  // States do Studio
   const [studioPrompt, setStudioPrompt] = useState('');
-  const [studioCurrentImage, setStudioCurrentImage] = useState<string | null>(null);
-  const [studioOriginalSource, setStudioOriginalSource] = useState<string | null>(null);
-  const [studioLogs, setStudioLogs] = useState<AgentStatus[]>([]);
-  const [studioParams, setStudioParams] = useState<LatentParams>({ ...DEFAULT_PARAMS });
-  const [studioGroundingLinks, setStudioGroundingLinks] = useState<{title: string, uri: string}[]>([]);
-  const [studioGrading, setStudioGrading] = useState<LatentGrading | undefined>(undefined);
-  const [studioVisualAnchor, setStudioVisualAnchor] = useState<VisualAnchor | undefined>(undefined);
+  const [studioCurrentImage, setStudioCurrentImage] = useState(null);
+  const [studioOriginalSource, setStudioOriginalSource] = useState(null);
+  const [studioLogs, setStudioLogs] = useState([]);
+  const [studioParams, setStudioParams] = useState({ ...DEFAULT_PARAMS });
+  const [studioGroundingLinks, setStudioGroundingLinks] = useState([]);
+  const [studioGrading, setStudioGrading] = useState(undefined);
+  const [studioVisualAnchor, setStudioVisualAnchor] = useState(undefined);
+  
   const [isDbLoaded, setIsDbLoaded] = useState(false);
   const [hasInitError, setHasInitError] = useState(false);
 
-  const [cinemaProject, setCinemaProject] = useState<CinemaProject>({
-    id: crypto.randomUUID(),
+  // Cinema State
+  const [cinemaProject, setCinemaProject] = useState({
+    id: typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(),
     title: 'Venus Documentary',
     beats: [],
     audioUrl: null,
     fps: 30,
     aspectRatio: '16:9',
-    subtitleSettings: DEFAULT_SUBTITLES
+    subtitleSettings: { fontSize: 16, fontColor: '#ffffff', backgroundColor: '#000000', fontFamily: 'Inter', bgOpacity: 0.8, textAlign: 'center', paddingHMult: 1, paddingVMult: 1, radiusMult: 1, marginMult: 1 }
   });
   const [cinemaScript, setCinemaScript] = useState('');
-  const [cinemaTitle, setCinemaTitle] = useState('');
-  const [cinemaCredits, setCinemaCredits] = useState('');
-  const [cinemaLogs, setCinemaLogs] = useState<AgentStatus[]>([]);
-  const [cinemaActiveBeatIndex, setCinemaActiveBeatIndex] = useState(0);
+  const [cinemaTitle, setCinemaTitle] = useState('<h1>VENUS_PROT_V1</h1>');
+  const [cinemaCredits, setCinemaCredits] = useState('<h1>THANKS_FOR_WATCHING</h1>');
+  const [cinemaLogs, setCinemaLogs] = useState([]);
+  const [activeBeatIndex, setActiveBeatIndex] = useState(0);
 
   useEffect(() => {
     warmupManager.ignite();
-    
-    // File Handler Integration (PWA)
-    if ('launchQueue' in window) {
-      // @ts-ignore
-      window.launchQueue.setConsumer(async (launchParams) => {
-        if (!launchParams.files.length) return;
-        const fileHandle = launchParams.files[0];
-        const file = await fileHandle.getFile();
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            setStudioCurrentImage(e.target?.result as string);
-            setActiveTab('workspace');
-        };
-        reader.readAsDataURL(file);
-      });
-    }
   }, []);
 
   useEffect(() => {
@@ -120,9 +114,9 @@ const AppContent: React.FC = () => {
   const fetchVault = useCallback(async () => {
     try {
       const items = await getAllNodes();
-      setVaultItems(Array.isArray(items) ? items.sort((a, b) => b.timestamp - a.timestamp) : []);
+      setVaultItems(Array.isArray(items) ? items : []);
     } catch (err) {
-      console.error("Critical Database Error:", err);
+      console.error("Database Error:", err);
       setVaultItems([]);
     } finally {
       setIsDbLoaded(true);
@@ -130,61 +124,38 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchVault().catch(e => {
-      console.error("Init Error", e);
-      setHasInitError(true);
-    });
+    fetchVault();
   }, [fetchVault]);
 
-  const handleCreationResult = (imageUrl: string, params: LatentParams, prompt: string, links: any[], grading?: LatentGrading, visualAnchor?: VisualAnchor) => {
-    setStudioCurrentImage(imageUrl);
+  const handleCreationResult = (imageUrl: string, params: LatentParams, prompt: string, links: any[], grading?: any, visualAnchor?: any) => {
+    setStudioCurrentImage(imageUrl as any);
     setStudioParams(params);
     setStudioPrompt(prompt);
-    setStudioGroundingLinks(links);
+    setStudioGroundingLinks(Array.isArray(links) ? links : [] as any);
     setStudioGrading(grading);
     setStudioVisualAnchor(visualAnchor);
-    setStudioOriginalSource(null);
     setActiveTab('workspace');
   };
 
   const handleSaveToVault = useCallback(async (item: VaultItem) => {
     try {
       await saveNode(item);
-      setVaultItems(prev => {
-        const index = prev.findIndex(i => i.id === item.id);
-        if (index !== -1) {
-          const updated = [...prev];
-          updated[index] = item;
-          return updated;
-        }
-        return [item, ...prev];
-      });
+      await fetchVault(); 
     } catch (e) {
-      console.error("Failed to index node:", e);
+      console.error("Vault Save Error:", e);
     }
-  }, []);
+  }, [fetchVault]);
 
   const handleDeleteFromVault = useCallback(async (id: string) => {
     try {
       await deleteNode(id);
-      setVaultItems(prev => prev.filter(item => item.id !== id));
+      setVaultItems(prev => prev.filter((item: VaultItem) => item.id !== id) as any);
     } catch (e) {
-      console.error("Delete failed:", e);
+      console.error("Delete Error:", e);
     }
   }, []);
 
-  const handleReloadFromVault = (item: VaultItem) => {
-    setStudioCurrentImage(item.imageUrl);
-    setStudioOriginalSource(item.originalImageUrl);
-    setStudioParams(item.params);
-    setStudioPrompt(item.prompt);
-    setStudioLogs(item.agentHistory || []);
-    setStudioGrading(item.grading);
-    setStudioVisualAnchor(undefined);
-    setActiveTab('workspace');
-  };
-
-  const executeHardReset = useCallback(() => {
+  const handleResetStudio = () => {
     setStudioPrompt('');
     setStudioCurrentImage(null);
     setStudioOriginalSource(null);
@@ -193,67 +164,76 @@ const AppContent: React.FC = () => {
     setStudioGroundingLinks([]);
     setStudioGrading(undefined);
     setStudioVisualAnchor(undefined);
-  }, []);
+  };
+
+  const handleResetCinema = () => {
+    setCinemaProject({
+      ...cinemaProject,
+      beats: [],
+      audioUrl: null
+    });
+    setCinemaScript('');
+    setCinemaLogs([]);
+    setActiveBeatIndex(0);
+  };
 
   if (hasInitError) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-8 text-center">
-        <div className="space-y-4">
-          <h1 className="text-2xl font-black text-white uppercase">Venus AI Kernel Failure</h1>
-          <p className="text-zinc-500 text-sm mono">Check API configuration environment.</p>
-          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-indigo-600 text-white rounded-full font-bold text-xs">Reload Venus</button>
-        </div>
+      <div className="min-h-screen bg-black flex items-center justify-center p-8">
+        <h1 className="text-white font-black uppercase tracking-tighter">Venus Kernel Error</h1>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#050505] text-zinc-100 overflow-hidden relative selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#050505] text-zinc-100 overflow-hidden relative">
       <WarmupUI />
-      <Toaster 
-        theme="dark" 
-        position="bottom-center" 
-        toastOptions={{
-          style: {
-            background: '#0e0e11',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: '#e5e5e5',
-            fontFamily: 'Inter, sans-serif'
-          }
-        }}
-      />
+      <Toaster theme="dark" position="bottom-center" />
+      
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} vaultCount={vaultItems.length} />
+      
+      <Navigation 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        vaultCount={vaultItems?.length || 0} 
+      />
 
       <main className="flex-1 overflow-auto bg-[#020202] relative custom-scrollbar">
         {!isDbLoaded ? (
           <div className="flex h-full items-center justify-center">
-             <div className="relative">
-                <div className="w-16 h-16 border-4 border-indigo-600/20 rounded-full" />
-                <div className="absolute inset-0 w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-             </div>
+             <div className="w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <Suspense fallback={<div className="p-8 text-center text-zinc-500 text-[10px] mono animate-pulse">LATENT_BUFFER_LOADING...</div>}>
-            <div className={`h-full ${activeTab !== 'lumina' ? 'pb-28 lg:pb-0' : ''}`}>
+          <Suspense fallback={<div className="p-12 text-center text-indigo-500 font-black animate-pulse">SYSTEM_LOADING...</div>}>
+            <div className={`h-full ${activeTab !== 'lumina' ? 'pb-24 lg:pb-0' : ''}`}>
               {activeTab === 'creation' && (
                 <CreationLab 
                   onResult={handleCreationResult}
                   params={studioParams}
                   setParams={setStudioParams}
-                  onReset={executeHardReset}
+                  settings={appSettings as AppSettings}
+                  onReset={handleResetStudio}
                   vault={vaultItems}
-                  settings={appSettings}
                 />
               )}
               {activeTab === 'workspace' && (
                 <Workspace 
-                  onSave={handleSaveToVault} vault={vaultItems} prompt={studioPrompt} setPrompt={setStudioPrompt}
-                  currentImage={studioCurrentImage} setCurrentImage={setStudioCurrentImage} 
-                  originalSource={studioOriginalSource} setOriginalSource={setStudioOriginalSource}
-                  logs={studioLogs} setLogs={setStudioLogs} params={studioParams} setParams={setStudioParams}
-                  onReloadApp={executeHardReset} grading={studioGrading} visualAnchor={studioVisualAnchor}
-                  settings={appSettings}
+                  onSave={handleSaveToVault} 
+                  vault={vaultItems} 
+                  prompt={studioPrompt} 
+                  setPrompt={setStudioPrompt}
+                  currentImage={studioCurrentImage} 
+                  setCurrentImage={setStudioCurrentImage}
+                  originalSource={studioOriginalSource}
+                  setOriginalSource={setStudioOriginalSource}
+                  logs={studioLogs}
+                  setLogs={setStudioLogs}
+                  params={studioParams}
+                  setParams={setStudioParams}
+                  onReloadApp={handleResetStudio}
+                  grading={studioGrading}
+                  visualAnchor={studioVisualAnchor}
+                  settings={appSettings as AppSettings}
                 />
               )}
               {activeTab === 'grading' && <GradingLab vault={vaultItems} onSave={handleSaveToVault} />}
@@ -261,10 +241,9 @@ const AppContent: React.FC = () => {
               {activeTab === 'cinema' && (
                 <CinemaLab 
                   vault={vaultItems} 
-                  onSave={handleSaveToVault} 
-                  currentSourceImage={studioCurrentImage}
-                  project={cinemaProject}
-                  setProject={setCinemaProject}
+                  onSave={handleSaveToVault}
+                  project={cinemaProject as any}
+                  setProject={setCinemaProject as any}
                   script={cinemaScript}
                   setScript={setCinemaScript}
                   title={cinemaTitle}
@@ -273,22 +252,40 @@ const AppContent: React.FC = () => {
                   setCredits={setCinemaCredits}
                   logs={cinemaLogs}
                   setLogs={setCinemaLogs}
-                  activeBeatIndex={cinemaActiveBeatIndex}
-                  setActiveBeatIndex={setCinemaActiveBeatIndex}
-                  onReset={() => {}}
-                  settings={appSettings}
+                  activeBeatIndex={activeBeatIndex}
+                  setActiveBeatIndex={setActiveBeatIndex}
+                  onReset={handleResetCinema}
+                  settings={appSettings as AppSettings}
                 />
               )}
-              {activeTab === 'fusion' && <FusionLab vault={vaultItems} onResult={(img, p, l) => {
-                  setStudioCurrentImage(img);
-                  setStudioParams(p);
-                  setStudioLogs(l);
-                  setActiveTab('workspace');
-              }} settings={appSettings} />}
-              {activeTab === 'manual' && <ManualNode onSave={handleSaveToVault} settings={appSettings} />}
-              {activeTab === 'vault' && <Vault items={vaultItems} onDelete={handleDeleteFromVault} onClearAll={() => {}} onRefresh={fetchVault} onReload={handleReloadFromVault} />}
+              {activeTab === 'fusion' && (
+                <FusionLab 
+                   vault={vaultItems} 
+                   onResult={(img, p, logs) => {
+                      setStudioCurrentImage(img as any);
+                      setStudioParams(p);
+                      setStudioLogs(logs as any);
+                      setActiveTab('workspace');
+                   }} 
+                   settings={appSettings as AppSettings} 
+                />
+              )}
+              {activeTab === 'vault' && (
+                <Vault 
+                   items={vaultItems} 
+                   onDelete={handleDeleteFromVault} 
+                   onRefresh={fetchVault} 
+                   onClearAll={() => {}}
+                   onReload={(item) => {
+                      setStudioCurrentImage(item.imageUrl as any);
+                      setStudioParams(item.params);
+                      setActiveTab('workspace');
+                   }} 
+                />
+              )}
+              {activeTab === 'settings' && <SettingsLab settings={appSettings as AppSettings} setSettings={setAppSettings} />}
               {activeTab === 'docs' && <DocsLab />}
-              {activeTab === 'settings' && <SettingsLab settings={appSettings} setSettings={setAppSettings} />}
+              {activeTab === 'manual' && <ManualNode onSave={handleSaveToVault} settings={appSettings as AppSettings} />}
             </div>
           </Suspense>
         )}
