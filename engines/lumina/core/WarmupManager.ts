@@ -48,12 +48,12 @@ export class WarmupManager {
     updateTask(id: string, updates: Partial<WarmupTask>) {
         const task = this.tasks.get(id);
         if (task) {
-            // Ensure status and label remain strings if updated
-            const sanitizedUpdates = { ...updates };
-            if (sanitizedUpdates.label) sanitizedUpdates.label = String(sanitizedUpdates.label);
-            if (sanitizedUpdates.status) sanitizedUpdates.status = String(sanitizedUpdates.status) as any;
+            // SAFEGUARD: Ensure visual fields are primitives. Fixes React Error #31.
+            const sanitized: Partial<WarmupTask> = { ...updates };
+            if (sanitized.label !== undefined) sanitized.label = String(sanitized.label);
+            if (sanitized.status !== undefined) sanitized.status = String(sanitized.status) as any;
             
-            Object.assign(task, sanitizedUpdates);
+            Object.assign(task, sanitized);
             this.emit('update', Array.from(this.tasks.values()));
         }
     }
@@ -73,13 +73,18 @@ export class WarmupManager {
         try {
             const samHealthPromise = this.handshakeWorker();
             const ckPromise = this.loadWithProgress('canvaskit', 'https://unpkg.com/canvaskit-wasm@0.39.1/bin/canvaskit.wasm')
-                .catch(() => this.updateTask('canvaskit', { status: 'unavailable' }));
+                .catch((err) => {
+                    this.updateTask('canvaskit', { 
+                      status: 'unavailable', 
+                      label: `Skia Engine (${err.message || 'Network Error'})` 
+                    });
+                });
 
             await Promise.all([samHealthPromise, ckPromise]);
             
             clearTimeout(kernelTimeout);
             console.log("Venus Kernel: Inicialização concluída.");
-        } catch (e) {
+        } catch (e: any) {
             console.warn("Venus Kernel: Falha na aceleração. Continuando em modo Standard.", e);
             this.handleTimeoutFallback();
         }
@@ -89,7 +94,7 @@ export class WarmupManager {
         this.aiEnabled = false;
         this.tasks.forEach(t => {
             if (t.status === 'pending' || t.status === 'loading') {
-                this.updateTask(t.id, { status: 'unavailable', label: String(t.label) + ' (Offline)' });
+                this.updateTask(t.id, { status: 'unavailable', label: `${String(t.label)} (Offline Mode)` });
             }
         });
     }
@@ -103,7 +108,6 @@ export class WarmupManager {
             }, 2000);
 
             try {
-                // Caminho absoluto normalizado para raiz do projeto
                 const workerUrl = new URL('/engines/lumina/workers/AI.worker.ts', import.meta.url);
                 const worker = new Worker(workerUrl, { type: 'module' });
                 
@@ -116,16 +120,16 @@ export class WarmupManager {
                     }
                 };
                 
-                worker.onerror = (err) => {
+                worker.onerror = (err: any) => {
                     clearTimeout(timeout);
                     console.warn("Kernel Worker Failure:", err);
                     worker.terminate();
-                    this.updateTask('sam', { status: 'unavailable' });
+                    this.updateTask('sam', { status: 'unavailable', label: 'Segment AI (Unsupported)' });
                     resolve(); 
                 };
 
                 worker.postMessage('PING');
-            } catch (e) {
+            } catch (e: any) {
                 clearTimeout(timeout);
                 console.warn("Worker Constructor Failed:", e);
                 this.updateTask('sam', { status: 'unavailable' });
@@ -152,7 +156,7 @@ export class WarmupManager {
                 this.updateTask(taskId, { progress });
             }
             this.updateTask(taskId, { status: 'ready', progress: 100 });
-        } catch (e) {
+        } catch (e: any) {
             console.warn(`Failed to load ${taskId}`, e);
             this.updateTask(taskId, { status: 'error' });
             throw e; 

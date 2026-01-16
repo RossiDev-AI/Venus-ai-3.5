@@ -40,7 +40,7 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
     if (typeof msg === 'string') return msg;
     if (msg === null || msg === undefined) return '';
     try {
-        return JSON.stringify(msg);
+        return typeof msg === 'object' ? JSON.stringify(msg) : String(msg);
     } catch(e) {
         return 'Data Fragment Error';
     }
@@ -66,7 +66,6 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
         ref={containerRef}
         className="flex-1 overflow-y-auto p-5 space-y-3 mono text-[10px] scroll-smooth custom-scrollbar relative bg-[#020202]"
       >
-        {/* Terminal Effects Overlay */}
         <div className="absolute inset-0 pointer-events-none z-10 opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
         {viewMode === 'terminal' ? (
@@ -82,15 +81,9 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
                     <span className="text-zinc-800 shrink-0 font-bold">[{new Date(log.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
                     <div className="flex flex-col gap-1 w-full">
                       <div className="flex justify-between items-center w-full">
-                          <span className={`font-black shrink-0 ${getDeptColor(log.department)} uppercase tracking-tighter`}>{log.type.replace(/\s/g, '_')}</span>
+                          <span className={`font-black shrink-0 ${getDeptColor(log.department)} uppercase tracking-tighter`}>{String(log.type).replace(/\s/g, '_')}</span>
                           {log.status === 'processing' && (
                             <span className="text-[6px] px-1 bg-white/5 rounded text-zinc-600 animate-pulse">ANALYZING</span>
-                          )}
-                          {log.flow_to && (
-                            <div className="flex items-center gap-1">
-                               <span className="text-[6px] text-zinc-700">→</span>
-                               <span className="text-[6px] text-zinc-600 font-bold uppercase">{log.flow_to}</span>
-                            </div>
                           )}
                       </div>
                       <p className="text-zinc-400 leading-relaxed break-words border-l border-white/5 pl-3 py-1 mt-1">
@@ -112,7 +105,7 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
                    </div>
                    <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
                       <div className="flex justify-between items-center">
-                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{step.from} → {step.to}</span>
+                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{String(step.from)} → {String(step.to)}</span>
                          <span className="text-[7px] text-zinc-600 mono">{new Date(step.timestamp).toLocaleTimeString()}</span>
                       </div>
                       <p className="text-[10px] font-black text-white uppercase">{formatMessage(step.action)}</p>

@@ -1,53 +1,16 @@
 import React from 'react';
 import { 
   Sparkles, 
+  Layout, 
+  Database, 
+  Cpu, 
+  FlaskConical, 
+  Video, 
   Palette, 
-  Clapperboard, 
-  MonitorPlay, 
-  Workflow, 
-  ScanLine, 
-  Archive, 
-  BookOpen, 
-  Settings 
+  Box, 
+  Settings, 
+  FileText 
 } from 'lucide-react';
-
-interface NavItemProps {
-  id: any;
-  label: string;
-  icon: React.ElementType;
-  badge?: number;
-  activeTab: string;
-  setActiveTab: (tab: any) => void;
-  isMobile?: boolean;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ id, label, icon: Icon, badge, activeTab, setActiveTab, isMobile }) => {
-  const isActive = activeTab === id;
-  return (
-    <button 
-      onClick={() => setActiveTab(id)} 
-      className={`relative flex flex-col items-center justify-center md:flex-row gap-1 md:gap-3 px-1 md:px-5 py-2 rounded-xl md:rounded-full transition-all duration-500 group
-        ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-    >
-      {isActive && (
-        <div className="absolute inset-0 bg-indigo-600/10 md:bg-indigo-600 rounded-xl md:rounded-full blur-[4px] md:blur-none opacity-80 md:opacity-100 animate-in fade-in zoom-in-95" />
-      )}
-      <div className={`relative flex flex-col md:flex-row items-center gap-1 md:gap-2 z-10 ${isActive && !isMobile && 'md:bg-indigo-600'}`}>
-         <span className={`text-lg md:text-xl transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-white' : 'text-zinc-500 group-hover:text-indigo-400'}`}>
-          <Icon size={20} strokeWidth={1.5} />
-         </span>
-         <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap overflow-hidden max-w-[45px] md:max-w-none text-center">
-           {label}
-         </span>
-         {badge !== undefined && badge > 0 && (
-           <span className="absolute -top-1 -right-1 md:static md:ml-1 px-1 min-w-[12px] h-[12px] bg-indigo-500 text-white text-[6px] md:text-[8px] font-black rounded-full flex items-center justify-center">
-             {badge > 99 ? '99+' : badge}
-           </span>
-         )}
-      </div>
-    </button>
-  );
-};
 
 interface NavigationProps {
   activeTab: string;
@@ -56,36 +19,62 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, vaultCount }) => {
-  const NAVIGATION_ITEMS = [
-    { id: 'creation', label: 'Criar', icon: Sparkles },
-    { id: 'workspace', label: 'Estúdio', icon: MonitorPlay },
-    { id: 'grading', label: 'Cores', icon: Palette },
-    { id: 'lumina', label: 'Lumina', icon: Workflow },
-    { id: 'cinema', label: 'Cinema', icon: Clapperboard },
-    { id: 'fusion', label: 'Fusion', icon: Workflow },
-    { id: 'manual', label: 'Index', icon: ScanLine },
-    { id: 'vault', label: 'Vault', icon: Archive, badge: vaultCount },
-    { id: 'docs', label: 'Docs', icon: BookOpen },
-    { id: 'settings', label: 'Config', icon: Settings }
+  const navItems = [
+    { id: 'creation', label: 'Creation', icon: Sparkles },
+    { id: 'workspace', label: 'Workspace', icon: Layout },
+    { id: 'lumina', label: 'Lumina Engine', icon: Box },
+    { id: 'fusion', label: 'Fusion Lab', icon: FlaskConical },
+    { id: 'cinema', label: 'Cinema Studio', icon: Video },
+    { id: 'grading', label: 'Grading', icon: Palette },
+    { id: 'vault', label: 'Vault', icon: Database, count: vaultCount },
+    { id: 'manual', label: 'Kernel', icon: Cpu },
+    { id: 'docs', label: 'Docs', icon: FileText },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
-    <>
-      {/* Desktop Navigation Dock */}
-      <nav className="hidden lg:flex items-center absolute top-[14px] left-1/2 -translate-x-1/2 z-[600] bg-zinc-900/60 backdrop-blur-3xl border border-white/10 p-1 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] scale-90 xl:scale-100 origin-center">
-        {NAVIGATION_ITEMS.map((item) => (
-          <NavItem key={item.id} {...item} activeTab={activeTab} setActiveTab={setActiveTab} />
-        ))}
-      </nav>
+    <nav className="fixed bottom-0 left-0 right-0 lg:relative lg:bottom-auto bg-[#0e0e11] border-t border-white/5 px-4 py-2 z-50">
+      <div className="max-w-7xl mx-auto flex items-center justify-between lg:justify-start lg:gap-2 overflow-x-auto no-scrollbar">
+        {navItems.map((item) => {
+          // CORREÇÃO CRÍTICA PARA O ERRO #31:
+          // Extraímos o componente de ícone para uma constante com inicial MAIÚSCULA.
+          const IconComponent = item.icon;
+          const isActive = activeTab === item.id;
 
-      {/* Mobile All-Visible Floating Dock */}
-      <nav className="lg:hidden fixed bottom-4 left-2 right-2 z-[500] bg-black/85 backdrop-blur-3xl border border-white/10 h-20 rounded-[2.5rem] flex items-center justify-around px-2 shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-x-auto">
-        <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none rounded-[2.5rem]" />
-        {NAVIGATION_ITEMS.map((item) => (
-          <NavItem key={item.id} {...item} activeTab={activeTab} setActiveTab={setActiveTab} isMobile />
-        ))}
-      </nav>
-    </>
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`
+                flex flex-col lg:flex-row items-center gap-1 lg:gap-2 px-3 py-2 rounded-lg transition-all duration-200 min-w-[70px] lg:min-w-0
+                ${isActive 
+                  ? 'bg-indigo-600/10 text-indigo-400' 
+                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}
+              `}
+            >
+              <div className="relative">
+                {/* Renderizamos como TAG, nunca como {item.icon} */}
+                {IconComponent && <IconComponent size={18} strokeWidth={isActive ? 2.5 : 2} />}
+                
+                {item.count !== undefined && item.count > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 text-[10px] font-bold text-white flex items-center justify-center rounded-full border border-[#0e0e11]">
+                    {item.count}
+                  </span>
+                )}
+              </div>
+              
+              <span className="text-[10px] lg:text-xs font-medium uppercase tracking-wider">
+                {item.label}
+              </span>
+
+              {isActive && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 lg:hidden" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 };
 

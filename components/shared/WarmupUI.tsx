@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { warmupManager, WarmupTask } from '../../engines/lumina/core/WarmupManager';
 import { motion } from 'https://esm.sh/framer-motion@10.16.4';
-import { Cpu, ShieldCheck, Zap, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
 
 export const WarmupUI: React.FC = () => {
     const [tasks, setTasks] = useState<WarmupTask[]>(warmupManager.getTasks());
@@ -11,17 +11,13 @@ export const WarmupUI: React.FC = () => {
     useEffect(() => {
         const handleUpdate = (newTasks: WarmupTask[]) => {
             setTasks(newTasks);
-            // Oculta a UI se tudo estiver pronto ou indisponível
             if (newTasks.every(t => ['ready', 'unavailable', 'error'].includes(t.status))) {
                 setTimeout(() => setIsVisible(false), 800);
             }
         };
         warmupManager.on('update', handleUpdate);
         
-        // Failsafe: Mostra botão de pular após 3s se travar
         const skipTimer = setTimeout(() => setShowSkip(true), 3000);
-        
-        // Failsafe Absoluto: Fecha forçadamente após 8s
         const forceCloseTimer = setTimeout(() => setIsVisible(false), 8000);
 
         return () => { 
@@ -61,7 +57,7 @@ export const WarmupUI: React.FC = () => {
                         <div key={task.id} className="space-y-2">
                             <div className="flex justify-between items-center px-1">
                                 <span className={`text-[8px] font-black uppercase tracking-widest ${task.status === 'unavailable' ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                                    {task.label}
+                                    {String(task.label || 'Task')}
                                 </span>
                                 <span className={`text-[8px] font-black uppercase ${
                                     task.status === 'ready' ? 'text-emerald-500' : 
@@ -101,12 +97,12 @@ export const WarmupUI: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <ShieldCheck size={12} className={warmupManager.multiThreaded ? "text-emerald-500" : "text-zinc-500"} />
                                 <span className="text-[7px] font-black uppercase text-zinc-500">
-                                    {warmupManager.multiThreaded ? 'SharedArrayBuffer Active' : 'Standard Mode'}
+                                    {warmupManager.multiThreaded ? 'SAB Active' : 'Standard Mode'}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Zap size={12} className="text-indigo-500" />
-                                <span className="text-[7px] font-black uppercase text-zinc-500">WebGPU Pipeline</span>
+                                <span className="text-[7px] font-black uppercase text-zinc-500">WebGPU Enabled</span>
                             </div>
                         </div>
                     )}

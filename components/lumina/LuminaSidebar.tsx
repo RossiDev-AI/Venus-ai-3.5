@@ -41,19 +41,21 @@ export const LuminaSidebar = track(() => {
   return (
     <div className="w-full h-full flex flex-col overflow-hidden text-zinc-400 select-none bg-[#0c0c0e]">
       <div className="flex bg-[#0e0e11] border-b border-white/5 h-20 shrink-0 p-2 gap-1 overflow-x-auto no-scrollbar">
-        {tabs.map(({ id, label, icon: Icon, restricted }) => (
-            <button 
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex-1 min-w-[65px] flex flex-col items-center justify-center gap-1.5 transition-all rounded-2xl relative ${activeTab === id ? 'text-white bg-white/[0.04] shadow-xl' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'} ${restricted ? 'opacity-30' : ''}`}
-            >
-                <Icon size={18} />
-                <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
-                {activeTab === id && (
-                    <motion.div layoutId="sidebar-tab" className="absolute bottom-1 left-4 right-4 h-0.5 bg-indigo-500 rounded-full" />
-                )}
-            </button>
-        ))}
+        {tabs.map(({ id, label, icon: Icon, restricted }) => {
+            return (
+                <button 
+                    key={id}
+                    onClick={() => setActiveTab(id as any)}
+                    className={`flex-1 min-w-[65px] flex flex-col items-center justify-center gap-1.5 transition-all rounded-2xl relative ${activeTab === id ? 'text-white bg-white/[0.04] shadow-xl' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'} ${restricted ? 'opacity-30' : ''}`}
+                >
+                    <Icon size={18} />
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
+                    {activeTab === id && (
+                        <motion.div layoutId="sidebar-tab" className="absolute bottom-1 left-4 right-4 h-0.5 bg-indigo-500 rounded-full" />
+                    )}
+                </button>
+            );
+        })}
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0c0c0e]">
@@ -106,7 +108,7 @@ export const LuminaSidebar = track(() => {
                 <Download size={14} /> Export Master
             </button>
             <span className="text-[9px] mono text-indigo-500 font-black tracking-tighter bg-indigo-500/10 px-2 py-0.5 rounded">
-                {Capabilities.engineType.split(' ')[0]}
+                {String(Capabilities.engineType).split(' ')[0]}
             </span>
       </div>
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface StudioConsensusReportProps {
@@ -13,7 +12,7 @@ const StudioConsensusReport: React.FC<StudioConsensusReportProps> = ({ report })
         <div className="bg-zinc-950 border border-white/5 p-5 rounded-2xl">
           <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest block mb-2">Multi-Agent Deliberation Result</span>
           <div className="text-[8px] mono text-zinc-600 h-24 overflow-y-auto custom-scrollbar whitespace-pre-wrap leading-relaxed">
-              {report.prompt}
+              {String(report.prompt || 'No content')}
           </div>
         </div>
     </div>
