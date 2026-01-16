@@ -2,44 +2,30 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Venus AI 3.5 | Neural Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus AI 3.5</title>
     
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #000; 
-            color: #fff; 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            overflow: hidden; 
-        }
-        #root { width: 100vw; height: 100vh; }
-        
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 10px; }
-    </style>
 
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "lucide-react": "https://esm.sh/lucide-react@0.368.0",
     "@tanstack/react-query": "https://esm.sh/@tanstack/react-query@5.28.4",
     "sonner": "https://esm.sh/sonner@1.4.41",
-    "pixi.js": "https://esm.sh/pixi.js@8.1.0",
-    "face-api": "https://esm.sh/@vladmandic/face-api@1.7.12",
-    "tldraw": "https://esm.sh/tldraw@3.5.0",
-    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
+    "@google/genai": "https://esm.sh/@google/genai@1.37.0",
+    "pixi.js": "https://esm.sh/pixi.js@8.15.0",
+    "tldraw": "https://esm.sh/tldraw@4.2.3",
     "comlink": "https://esm.sh/comlink@4.4.2",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
     "node-vibrant": "https://esm.sh/node-vibrant@^4.0.3",
-    "perfect-freehand": "https://esm.sh/perfect-freehand@^1.2.2",
     "@uppy/core": "https://esm.sh/@uppy/core@^5.2.0",
+    "perfect-freehand": "https://esm.sh/perfect-freehand@^1.2.2",
     "@uppy/react": "https://esm.sh/@uppy/react@^5.1.1",
     "@uppy/image-editor": "https://esm.sh/@uppy/image-editor@^4.1.0",
     "@uppy/compressor": "https://esm.sh/@uppy/compressor@^3.1.0",
@@ -51,27 +37,24 @@
     "canvaskit-wasm": "https://esm.sh/canvaskit-wasm@^0.40.0",
     "pica": "https://esm.sh/pica@^9.0.1",
     "yjs": "https://esm.sh/yjs@^13.6.29",
-    "y-webrtc": "https://esm.sh/y-webrtc@^10.3.0",
     "jszip": "https://esm.sh/jszip@^3.10.1",
-    "peerjs": "https://esm.sh/peerjs@^1.5.5",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "y-webrtc": "https://esm.sh/y-webrtc@^10.3.0",
+    "peerjs": "https://esm.sh/peerjs@^1.5.5"
   }
 }
 </script>
 </head>
-<body>
-    <div id="root">
-        <div style="display: flex; height: 100vh; width: 100vw; align-items: center; justify-content: center; background: #050505;">
-            <div style="text-align: center;">
-                <div style="width: 40px; height: 40px; border: 3px solid rgba(99, 102, 241, 0.2); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px;"></div>
-                <p style="color: #6366f1; font-size: 10px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase;">Venus AI Kernel</p>
-            </div>
-        </div>
-    </div>
+<body class="bg-black text-white">
+    <div id="root"></div>
 
-    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    <script type="text/babel" data-type="module">
+        import React from 'react';
+        import ReactDOM from 'react-dom/client';
+        // IMPORTANTE: Mudamos para .js para evitar o erro de MIME type do Google
+        import App from './App.js'; 
 
-    <script type="module" src="./index.tsx"></script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
