@@ -46,16 +46,16 @@ export const VectorInspector = track(() => {
                         { id: PathfinderOp.DIFFERENCE, icon: Scissors, label: 'Subtrair' },
                         { id: PathfinderOp.INTERSECT, icon: Target, label: 'Interseção' },
                         { id: PathfinderOp.XOR, icon: Combine, label: 'Excluir' }
-                    ].map(btn => (
+                    ].map(({ id, icon: Icon, label }) => (
                         <button 
-                            key={btn.id}
-                            onClick={() => handlePathOp(btn.id)}
+                            key={id}
+                            onClick={() => handlePathOp(id)}
                             disabled={!canCombine}
                             className="p-4 bg-zinc-900 border border-white/5 rounded-2xl hover:bg-indigo-600 disabled:opacity-20 transition-all flex flex-col items-center gap-2 group"
-                            title={btn.label}
+                            title={label}
                         >
-                            <btn.icon size={16} className="text-zinc-400 group-hover:text-white" />
-                            <span className="text-[6px] font-black uppercase text-zinc-600 group-hover:text-white">{btn.label}</span>
+                            <Icon size={16} className="text-zinc-400 group-hover:text-white" />
+                            <span className="text-[6px] font-black uppercase text-zinc-600 group-hover:text-white">{label}</span>
                         </button>
                     ))}
                 </div>

@@ -11,8 +11,8 @@ class SamBridgeService {
   private activeImageId: string | null = null;
 
   constructor() {
-    // Correct way to instantiate Workers in modern ESM environments
-    const workerUrl = new URL('../workers/sam.worker.ts', import.meta.url);
+    // Caminho absoluto para workers/sam.worker.ts na raiz
+    const workerUrl = new URL('/workers/sam.worker.ts', import.meta.url);
     this.worker = new Worker(workerUrl, { type: 'module' });
     this.worker.onmessage = this.handleMessage.bind(this);
   }
@@ -30,11 +30,8 @@ class SamBridgeService {
     this.pendingRequests.delete(id);
   }
 
-  /**
-   * Pre-loads an image into the SAM worker using SharedArrayBuffer for zero-copy transfer.
-   */
   async loadImage(imageUrl: string, imageId: string): Promise<void> {
-    if (this.activeImageId === imageId) return; // Already loaded
+    if (this.activeImageId === imageId) return;
 
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -51,8 +48,6 @@ class SamBridgeService {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
-        // --- Shared Memory Allocation ---
-        // Create SAB big enough for RGBA data
         const sab = new SharedArrayBuffer(imageData.data.length);
         const uint8View = new Uint8Array(sab);
         uint8View.set(imageData.data);
@@ -78,9 +73,6 @@ class SamBridgeService {
     });
   }
 
-  /**
-   * Requests a segmentation mask for a specific point on the active image.
-   */
   async segmentPoint(imageId: string, x: number, y: number, originalWidth: number, originalHeight: number): Promise<ImageBitmap> {
     const id = uniqueId();
     return new Promise((resolve, reject) => {

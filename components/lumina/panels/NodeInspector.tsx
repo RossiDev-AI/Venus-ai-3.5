@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Editor, track } from 'tldraw';
 import { Sliders, Sun, Contrast, Droplets, RotateCw, Camera, Target, Focus, Aperture, Wind, Sparkles, Scan, Zap } from 'lucide-react';
@@ -13,11 +12,11 @@ const ControlSlider = ({ label, icon: Icon, value, min, max, step, onChange, col
                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{label}</span>
             </div>
             <span className="text-[10px] mono font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                {typeof value === 'number' ? value.toFixed(2) : value}
+                {typeof value === 'number' ? value.toFixed(2) : String(value ?? '')}
             </span>
         </div>
         <input 
-            type="range" min={min} max={max} step={step} value={value ?? (min+max)/2}
+            type="range" min={min} max={max} step={step} value={typeof value === 'number' ? value : (min+max)/2}
             onChange={e => onChange(parseFloat(e.target.value))}
             className="w-full h-1 bg-zinc-800 rounded-full appearance-none cursor-pointer accent-indigo-500"
         />

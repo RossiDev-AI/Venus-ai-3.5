@@ -51,6 +51,26 @@ const ManualNode: React.FC<ManualNodeProps> = ({ onSave, settings }) => {
     }
   };
 
+  const handleImageSelect = (url: string) => {
+      if (url.startsWith('blob:')) {
+          fetch(url)
+            .then(r => r.blob())
+            .then(blob => {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                if (ev.target?.result) {
+                    setImage(ev.target.result as string);
+                    setDna(null);
+                }
+              };
+              reader.readAsDataURL(blob);
+            });
+      } else {
+          setImage(url);
+          setDna(null);
+      }
+  };
+
   const handleMagicBiopsy = async () => {
     if (!image || isScanningDNA) return;
     setIsScanningDNA(true);
@@ -138,6 +158,7 @@ const ManualNode: React.FC<ManualNodeProps> = ({ onSave, settings }) => {
               isScanning={isScanningDNA} 
               scanProgress={scanProgress} 
               onUploadClick={() => !isScanningDNA && fileRef.current?.click()} 
+              onFileSelect={handleImageSelect}
             />
             
             {image && !dna && !isScanningDNA && (

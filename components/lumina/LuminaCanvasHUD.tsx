@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useEditor, track } from 'tldraw';
 import { 
@@ -42,19 +41,19 @@ export const LuminaCanvasHUD = track(() => {
                     <Activity size={14} className="text-emerald-500 animate-pulse" />
                 </div>
                 
-                {HUD_TOOLS.map(group => (
-                    <div key={group.cat} className="relative group">
+                {HUD_TOOLS.map(({ cat, icon: Icon, items }) => (
+                    <div key={cat} className="relative group">
                         <button 
-                            onMouseEnter={() => setActiveCat(group.cat)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeCat === group.cat ? 'bg-indigo-600 text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+                            onMouseEnter={() => setActiveCat(cat)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeCat === cat ? 'bg-indigo-600 text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
                         >
-                            <group.icon size={12} />
-                            {group.cat}
+                            <Icon size={12} />
+                            {cat}
                             <ChevronDown size={10} className="opacity-30" />
                         </button>
                         
                         <AnimatePresence>
-                            {activeCat === group.cat && (
+                            {activeCat === cat && (
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -62,7 +61,7 @@ export const LuminaCanvasHUD = track(() => {
                                     onMouseLeave={() => setActiveCat(null)}
                                     className="absolute top-full left-0 mt-2 w-48 bg-[#0e0e11] border border-white/10 rounded-2xl shadow-2xl p-2 grid grid-cols-1 gap-1"
                                 >
-                                    {group.items.map(item => (
+                                    {items.map(item => (
                                         <button 
                                             key={item}
                                             onClick={() => applyHUDOp(item)}

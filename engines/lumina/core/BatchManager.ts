@@ -33,8 +33,8 @@ export class BatchManager {
         this.updateUI();
 
         try {
-            // Fix: Caminho relativo consistente com o WarmupManager
-            const workerUrl = new URL('../workers/Batch.worker.ts', import.meta.url);
+            // Caminho absoluto para a raiz do projeto
+            const workerUrl = new URL('/engines/lumina/workers/Batch.worker.ts', import.meta.url);
             const worker = new Worker(workerUrl, { type: 'module' });
             
             worker.onmessage = async (e) => {

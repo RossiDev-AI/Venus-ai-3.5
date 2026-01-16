@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Sparkles, 
@@ -15,14 +14,14 @@ import {
 interface NavItemProps {
   id: any;
   label: string;
-  icon: React.ReactNode;
+  icon: React.ElementType;
   badge?: number;
   activeTab: string;
   setActiveTab: (tab: any) => void;
   isMobile?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ id, label, icon, badge, activeTab, setActiveTab, isMobile }) => {
+const NavItem: React.FC<NavItemProps> = ({ id, label, icon: Icon, badge, activeTab, setActiveTab, isMobile }) => {
   const isActive = activeTab === id;
   return (
     <button 
@@ -35,7 +34,7 @@ const NavItem: React.FC<NavItemProps> = ({ id, label, icon, badge, activeTab, se
       )}
       <div className={`relative flex flex-col md:flex-row items-center gap-1 md:gap-2 z-10 ${isActive && !isMobile && 'md:bg-indigo-600'}`}>
          <span className={`text-lg md:text-xl transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-white' : 'text-zinc-500 group-hover:text-indigo-400'}`}>
-          {icon}
+          <Icon size={20} strokeWidth={1.5} />
          </span>
          <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap overflow-hidden max-w-[45px] md:max-w-none text-center">
            {label}
@@ -58,16 +57,16 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, vaultCount }) => {
   const NAVIGATION_ITEMS = [
-    { id: 'creation', label: 'Criar', icon: <Sparkles size={20} strokeWidth={1.5} /> },
-    { id: 'workspace', label: 'Estúdio', icon: <MonitorPlay size={20} strokeWidth={1.5} /> },
-    { id: 'grading', label: 'Cores', icon: <Palette size={20} strokeWidth={1.5} /> },
-    { id: 'lumina', label: 'Lumina', icon: <Workflow size={20} strokeWidth={1.5} /> },
-    { id: 'cinema', label: 'Cinema', icon: <Clapperboard size={20} strokeWidth={1.5} /> },
-    { id: 'fusion', label: 'Fusion', icon: <Workflow size={20} strokeWidth={1.5} /> },
-    { id: 'manual', label: 'Index', icon: <ScanLine size={20} strokeWidth={1.5} /> },
-    { id: 'vault', label: 'Vault', icon: <Archive size={20} strokeWidth={1.5} />, badge: vaultCount },
-    { id: 'docs', label: 'Docs', icon: <BookOpen size={20} strokeWidth={1.5} /> },
-    { id: 'settings', label: 'Config', icon: <Settings size={20} strokeWidth={1.5} /> }
+    { id: 'creation', label: 'Criar', icon: Sparkles },
+    { id: 'workspace', label: 'Estúdio', icon: MonitorPlay },
+    { id: 'grading', label: 'Cores', icon: Palette },
+    { id: 'lumina', label: 'Lumina', icon: Workflow },
+    { id: 'cinema', label: 'Cinema', icon: Clapperboard },
+    { id: 'fusion', label: 'Fusion', icon: Workflow },
+    { id: 'manual', label: 'Index', icon: ScanLine },
+    { id: 'vault', label: 'Vault', icon: Archive, badge: vaultCount },
+    { id: 'docs', label: 'Docs', icon: BookOpen },
+    { id: 'settings', label: 'Config', icon: Settings }
   ];
 
   return (

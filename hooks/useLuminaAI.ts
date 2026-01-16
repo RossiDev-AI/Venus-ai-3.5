@@ -6,8 +6,8 @@ export const useLuminaAI = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Robust Path Resolution: Using URL constructor with import.meta.url
-    const workerUrl = new URL('../workers/ia.worker.ts', import.meta.url);
+    // Caminho absoluto para workers/ia.worker.ts na raiz
+    const workerUrl = new URL('/workers/ia.worker.ts', import.meta.url);
     const worker = new Worker(workerUrl, { type: 'module' });
     workerRef.current = Comlink.wrap(worker);
     

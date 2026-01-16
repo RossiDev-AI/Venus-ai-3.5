@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useEditor, track } from 'tldraw';
 import { 
@@ -77,19 +76,19 @@ export const LuminaSuperBar = track(({ onImportClick }: { onImportClick: () => v
             </div>
 
             <div className="flex-1 flex items-center gap-1 px-2 md:px-8 overflow-x-auto no-scrollbar mask-gradient">
-                {COLLECTIONS.map(group => (
-                    <div key={group.id} className="relative shrink-0">
+                {COLLECTIONS.map(({ id, label, icon: Icon, items }) => (
+                    <div key={id} className="relative shrink-0">
                         <button 
-                            onClick={() => setActiveDropdown(activeDropdown === group.id ? null : group.id)}
-                            className={`flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${activeDropdown === group.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+                            onClick={() => setActiveDropdown(activeDropdown === id ? null : id)}
+                            className={`flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${activeDropdown === id ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
                         >
-                            <group.icon size={12} />
-                            {group.label}
+                            <Icon size={12} />
+                            {label}
                             <ChevronDown size={10} className="opacity-30" />
                         </button>
 
                         <AnimatePresence>
-                            {activeDropdown === group.id && (
+                            {activeDropdown === id && (
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -98,10 +97,10 @@ export const LuminaSuperBar = track(({ onImportClick }: { onImportClick: () => v
                                 >
                                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
                                         <div className="px-3 py-2 text-[7px] font-black text-zinc-600 uppercase tracking-widest border-b border-white/5 mb-1 flex justify-between">
-                                            <span>{group.label} Catalog</span>
+                                            <span>{label} Catalog</span>
                                             <button onClick={() => setActiveDropdown(null)} className="md:hidden text-white">X</button>
                                         </div>
-                                        {group.items.map(item => (
+                                        {items.map(item => (
                                             <button 
                                                 key={item.label}
                                                 onClick={() => handleToolAction(item)}

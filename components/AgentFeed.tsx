@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { AgentStatus, DeliberationStep } from '../types';
 
@@ -35,6 +34,16 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
     if (type === 'Visual Archivist') return 'bg-indigo-600/10 border-indigo-500/30';
     if (type === 'Meta-Prompt Translator') return 'bg-purple-500/10 border-purple-500/30';
     return 'bg-zinc-900/40 border-white/5';
+  };
+
+  const formatMessage = (msg: any): string => {
+    if (typeof msg === 'string') return msg;
+    if (msg === null || msg === undefined) return '';
+    try {
+        return JSON.stringify(msg);
+    } catch(e) {
+        return 'Data Fragment Error';
+    }
   };
 
   return (
@@ -85,7 +94,7 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
                           )}
                       </div>
                       <p className="text-zinc-400 leading-relaxed break-words border-l border-white/5 pl-3 py-1 mt-1">
-                        {log.message}
+                        {formatMessage(log.message)}
                         {i === logs.length - 1 && isProcessing && <span className="inline-block w-2 h-4 bg-indigo-500 ml-1 animate-pulse" />}
                       </p>
                     </div>
@@ -106,10 +115,10 @@ const AgentFeed: React.FC<AgentFeedProps> = ({ logs, isProcessing, deliberation_
                          <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{step.from} → {step.to}</span>
                          <span className="text-[7px] text-zinc-600 mono">{new Date(step.timestamp).toLocaleTimeString()}</span>
                       </div>
-                      <p className="text-[10px] font-black text-white uppercase">{step.action}</p>
+                      <p className="text-[10px] font-black text-white uppercase">{formatMessage(step.action)}</p>
                       <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg">
                          <div className="w-1 h-1 bg-emerald-500 rounded-full shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                         <span className="text-[8px] text-zinc-400 mono italic">{step.impact}</span>
+                         <span className="text-[8px] text-zinc-400 mono italic">{formatMessage(step.impact)}</span>
                       </div>
                    </div>
                 </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useEditor, TLShape, track } from 'tldraw';
 import { Layers, Sliders, Sparkles, Target, Grid, Download, Type, Box, History, Zap, Shapes, Users } from 'lucide-react';
@@ -42,15 +41,15 @@ export const LuminaSidebar = track(() => {
   return (
     <div className="w-full h-full flex flex-col overflow-hidden text-zinc-400 select-none bg-[#0c0c0e]">
       <div className="flex bg-[#0e0e11] border-b border-white/5 h-20 shrink-0 p-2 gap-1 overflow-x-auto no-scrollbar">
-        {tabs.map(t => (
+        {tabs.map(({ id, label, icon: Icon, restricted }) => (
             <button 
-                key={t.id}
-                onClick={() => setActiveTab(t.id as any)}
-                className={`flex-1 min-w-[65px] flex flex-col items-center justify-center gap-1.5 transition-all rounded-2xl relative ${activeTab === t.id ? 'text-white bg-white/[0.04] shadow-xl' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'} ${t.restricted ? 'opacity-30' : ''}`}
+                key={id}
+                onClick={() => setActiveTab(id as any)}
+                className={`flex-1 min-w-[65px] flex flex-col items-center justify-center gap-1.5 transition-all rounded-2xl relative ${activeTab === id ? 'text-white bg-white/[0.04] shadow-xl' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'} ${restricted ? 'opacity-30' : ''}`}
             >
-                <t.icon size={18} />
-                <span className="text-[8px] font-black uppercase tracking-[0.2em]">{t.label}</span>
-                {activeTab === t.id && (
+                <Icon size={18} />
+                <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
+                {activeTab === id && (
                     <motion.div layoutId="sidebar-tab" className="absolute bottom-1 left-4 right-4 h-0.5 bg-indigo-500 rounded-full" />
                 )}
             </button>

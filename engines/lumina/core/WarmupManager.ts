@@ -1,4 +1,3 @@
-
 import { Capabilities } from '../../../utils/Capabilities';
 
 export interface WarmupTask {
@@ -15,7 +14,6 @@ export class WarmupManager {
     public multiThreaded: boolean = false;
 
     constructor() {
-        // Detecção nativa imediata. Se não houver SAB, o sistema aceita o modo Standard.
         this.multiThreaded = typeof SharedArrayBuffer !== 'undefined' && window.crossOriginIsolated;
         if (!this.multiThreaded) {
             console.warn('Venus Kernel: SharedArrayBuffer indisponível. Operando em modo Single-Thread (Standard).');
@@ -50,7 +48,12 @@ export class WarmupManager {
     updateTask(id: string, updates: Partial<WarmupTask>) {
         const task = this.tasks.get(id);
         if (task) {
-            Object.assign(task, updates);
+            // Ensure status and label remain strings if updated
+            const sanitizedUpdates = { ...updates };
+            if (sanitizedUpdates.label) sanitizedUpdates.label = String(sanitizedUpdates.label);
+            if (sanitizedUpdates.status) sanitizedUpdates.status = String(sanitizedUpdates.status) as any;
+            
+            Object.assign(task, sanitizedUpdates);
             this.emit('update', Array.from(this.tasks.values()));
         }
     }
@@ -62,17 +65,13 @@ export class WarmupManager {
     async ignite() {
         console.log(`Venus Kernel: Ignite init. Multi-threaded: ${this.multiThreaded}`);
         
-        // Timeout global de segurança reduzido para não prender o usuário
         const kernelTimeout = setTimeout(() => {
             console.warn("Venus Kernel: Timeout global. Forçando liberação da UI.");
             this.handleTimeoutFallback();
         }, 5000); 
 
         try {
-            // Handshake do AI Worker - Non-blocking soft fail
             const samHealthPromise = this.handshakeWorker();
-            
-            // Carregamento Progressivo WASM (Skia) - Non-blocking soft fail
             const ckPromise = this.loadWithProgress('canvaskit', 'https://unpkg.com/canvaskit-wasm@0.39.1/bin/canvaskit.wasm')
                 .catch(() => this.updateTask('canvaskit', { status: 'unavailable' }));
 
@@ -90,16 +89,13 @@ export class WarmupManager {
         this.aiEnabled = false;
         this.tasks.forEach(t => {
             if (t.status === 'pending' || t.status === 'loading') {
-                // Marca tudo que não carregou como indisponível para liberar a UI
-                this.updateTask(t.id, { status: 'unavailable', label: `${t.label} (Offline)` });
+                this.updateTask(t.id, { status: 'unavailable', label: String(t.label) + ' (Offline)' });
             }
         });
     }
 
     private async handshakeWorker(): Promise<void> {
         return new Promise((resolve) => {
-            // Timeout agressivo de 2 segundos para o worker. 
-            // Se não responder PONG em 2s, assume falha e libera a UI.
             const timeout = setTimeout(() => {
                 console.warn("Worker Handshake Timed Out (2s). Skipping AI.");
                 this.updateTask('sam', { status: 'unavailable' });
@@ -107,8 +103,8 @@ export class WarmupManager {
             }, 2000);
 
             try {
-                // Caminho relativo robusto para bundlers modernos
-                const workerUrl = new URL('../workers/AI.worker.ts', import.meta.url);
+                // Caminho absoluto normalizado para raiz do projeto
+                const workerUrl = new URL('/engines/lumina/workers/AI.worker.ts', import.meta.url);
                 const worker = new Worker(workerUrl, { type: 'module' });
                 
                 worker.onmessage = (e) => {
@@ -159,7 +155,7 @@ export class WarmupManager {
         } catch (e) {
             console.warn(`Failed to load ${taskId}`, e);
             this.updateTask(taskId, { status: 'error' });
-            throw e; // Repassa erro para ser tratado no ignite
+            throw e; 
         }
     }
 }
