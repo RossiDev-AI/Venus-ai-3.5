@@ -1,0 +1,18 @@
+
+{
+  "name": "venus-3.5-lumina",
+  "private": true,
+  "version": "3.5.0",
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0-alpha.19",
+    "@tldraw/tldraw": "^3.5.0",
+    "canvaskit-wasm": "^0.39.1",
+    "chroma-js": "^2.4.2",
+    "fabric": "^5.3.0",
+    "pica": "^9.0.1",
+    "pixi.js": "^8.1.0",
+    "yjs": "^13.6.14",
+    "vite-plugin-pwa": "^0.19.0"
+  }
+}

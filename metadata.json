@@ -1,0 +1,9 @@
+{
+  "name": "Venus AI - Neural Cinema Studio 3.5",
+  "description": "Next-gen Multi-Agent Image/Video Orchestrator featuring LGN Post-Production and Kinetic DNA Preservation.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera",
+    "microphone"
+  ]
+}
